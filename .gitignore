@@ -1,0 +1,48 @@
+# Ignore CubeIDE specific files
+#/.cproject
+#/.project
+#/.settings/
+
+# Ignore build artifacts and binaries
+/Debug/*
+!Debug/GP_Pulse_V2.bin
+/Release/
+/build/
+/out/
+/*.elf
+/*.bin
+/*.hex
+/*.map
+/*.list
+/*.srec
+/*.axf
+/*.d
+
+# Ignore object files and dependency files
+*.o
+*.d
+*.su
+*.dep
+
+# Ignore CMSIS build artifacts
+*.bak
+*.swp
+*.swo
+
+# Ignore Eclipse/CubeIDE auto-generated files
+/.metadata/
+/.loadpath
+/.launches/
+/.settings/
+
+# Ignore temporary files from the operating system
+.DS_Store
+Thumbs.db
+
+# Ignore log and debug files
+*.log
+*.trace
+
+# Ignore Backup files
+*~ 
+GP_Pulse_V2 Debug.launch
