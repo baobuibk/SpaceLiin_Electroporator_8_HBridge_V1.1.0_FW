@@ -82,6 +82,8 @@ void H_Bridge_Task(void*)
 
                 H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
                 H_Bridge_Set_Pulse_Timing(&HB_pos_pole, 1, hv_on_time_ms, hv_off_time_ms, hv_pulse_pos_count);
+                V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+                LL_GPIO_SetOutputPin(V_Switch_HV.Port, V_Switch_HV.Pin);
                 H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_PULSE);
 
                 H_Bridge_State = H_BRIDGE_HV_1_STATE;
@@ -136,6 +138,8 @@ void H_Bridge_Task(void*)
 
                 H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_LS_ON);
                 H_Bridge_Set_Pulse_Timing(&HB_neg_pole, hv_delay_ms, hv_on_time_ms, hv_off_time_ms, hv_pulse_neg_count);
+                V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+                LL_GPIO_SetOutputPin(V_Switch_HV.Port, V_Switch_HV.Pin);
                 H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_PULSE);
 
                 H_Bridge_State = H_BRDIGE_HV_2_STATE;
