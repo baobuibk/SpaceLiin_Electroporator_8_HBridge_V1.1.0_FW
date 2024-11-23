@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "app.h": "c"
+        "app.h": "c",
+        "h_bridge_driver.h": "c",
+        "cmd_line.h": "c",
+        "command.h": "c"
     }
 }

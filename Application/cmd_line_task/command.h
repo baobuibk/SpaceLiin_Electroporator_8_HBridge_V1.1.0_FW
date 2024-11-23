@@ -11,6 +11,9 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+int CMD_SET_CB_CONTROL(int argc, char *argv[]);
+int CMD_SET_G_CONTROL(int argc, char *argv[]);
+
 /* :::::::::: Pulse Control Command :::::::: */
 int CMD_SET_PULSE_POLE(int argc, char *argv[]);
 int CMD_SET_PULSE_COUNT(int argc, char *argv[]);

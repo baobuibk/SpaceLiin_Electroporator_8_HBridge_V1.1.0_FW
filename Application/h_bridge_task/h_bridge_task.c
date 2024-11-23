@@ -30,16 +30,16 @@ bool        is_h_bridge_enable          = false;
 uint16_t    pulse_delay_ms              = 15;
 
 uint8_t     hv_pulse_pos_count          = 5;
-uint8_t     hv_pulse_neg_count          = 7;
+uint8_t     hv_pulse_neg_count          = 6;
 uint8_t     hv_delay_ms                 = 5;
 uint8_t     hv_on_time_ms               = 5;
-uint8_t     hv_off_time_ms              = 6;
+uint8_t     hv_off_time_ms              = 15;
 
-uint8_t     lv_pulse_pos_count          = 9;
-uint8_t     lv_pulse_neg_count          = 15;
+uint8_t     lv_pulse_pos_count          = 7;
+uint8_t     lv_pulse_neg_count          = 8;
 uint8_t     lv_delay_ms                 = 10;
-uint16_t    lv_on_time_ms               = 10;
-uint16_t    lv_off_time_ms              = 15;
+uint16_t    lv_on_time_ms               = 50;
+uint16_t    lv_off_time_ms              = 90;
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: H Bridge Task Init :::::::: */
 void H_Bridge_Task_Init(void)
@@ -67,9 +67,10 @@ void H_Bridge_Task(void*)
         if(is_h_bridge_enable == false)
         {
             V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+            //V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
 
-            H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_LS_ON);
-            H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+            H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+            H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
 
             SchedulerTaskDisable(0);
         }
@@ -241,7 +242,7 @@ void H_Bridge_Task(void*)
             H_Bridge_State = H_BRIDGE_HV_1_STATE;
             */
         
-              is_h_bridge_enable = false;
+            is_h_bridge_enable = false;
             H_Bridge_State = H_BRIDGE_STOP_STATE;
         }
         break;

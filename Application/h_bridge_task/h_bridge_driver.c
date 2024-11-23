@@ -4,7 +4,7 @@
 #include "h_bridge_driver.h"
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 #define SD_DUTY_MIN \
-((APB1_TIMER_CLK / 1000000) * 50) / (H_Bridge_x->PWM.Prescaler)
+((APB1_TIMER_CLK / 1000000) * 100) / (H_Bridge_x->PWM.Prescaler)
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -34,7 +34,7 @@ PWM_TypeDef HB_PWM_SD0_3 =
 {
     .TIMx       =   H_BRIDGE_SD0_3_HANDLE,
     .Prescaler  =   1199,
-    .Mode       =   LL_TIM_OCMODE_FORCED_ACTIVE,
+    .Mode       =   LL_TIM_OCMODE_FORCED_INACTIVE,
     .Polarity   =   LL_TIM_OCPOLARITY_HIGH,
     .Duty       =   3, //100us
     .Freq       =   0,
@@ -44,7 +44,7 @@ PWM_TypeDef HB_PWM_SD4_7 =
 {
     .TIMx       =   H_BRIDGE_SD4_7_HANDLE,
     .Prescaler  =   1199,
-    .Mode       =   LL_TIM_OCMODE_FORCED_ACTIVE,
+    .Mode       =   LL_TIM_OCMODE_FORCED_INACTIVE,
     .Polarity   =   LL_TIM_OCPOLARITY_HIGH,
     .Duty       =   3, //100us
     .Freq       =   0,
@@ -101,8 +101,8 @@ H_Bridge_typdef HB_neg_pole =
 H_Bridge_typdef *p_HB_SD_0_3 = &HB_pos_pole;
 H_Bridge_typdef *p_HB_SD_4_7 = &HB_neg_pole;
 
-uint8_t HB_pos_pole_index = 0;
-uint8_t HB_neg_pole_index = 4;
+uint8_t HB_pos_pole_index = 2;
+uint8_t HB_neg_pole_index = 7;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: H Bridge Driver Init :::::::: */
@@ -125,6 +125,15 @@ void H_Bridge_Driver_Init(void)
         LL_TIM_CC_EnableChannel(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i]);
         LL_GPIO_ResetOutputPin(H_BRIDGE_HIN0_7_PORT, HB_pin_array[i]);
     }
+
+    LL_TIM_SetOffStates(H_BRIDGE_SD0_3_HANDLE, LL_TIM_OSSI_ENABLE, LL_TIM_OSSR_ENABLE);
+    LL_TIM_SetOffStates(H_BRIDGE_SD4_7_HANDLE, LL_TIM_OSSI_ENABLE, LL_TIM_OSSR_ENABLE);
+
+    LL_TIM_DisableAutomaticOutput(H_BRIDGE_SD0_3_HANDLE);
+    LL_TIM_DisableAutomaticOutput(H_BRIDGE_SD4_7_HANDLE);
+
+    LL_TIM_EnableAllOutputs(H_BRIDGE_SD0_3_HANDLE);
+    LL_TIM_EnableAllOutputs(H_BRIDGE_SD4_7_HANDLE);
 
     LL_TIM_SetPrescaler(H_BRIDGE_SD0_3_HANDLE, 1199);
     LL_TIM_SetPrescaler(H_BRIDGE_SD4_7_HANDLE, 1199);
