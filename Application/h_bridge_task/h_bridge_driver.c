@@ -101,8 +101,8 @@ H_Bridge_typdef HB_neg_pole =
 H_Bridge_typdef *p_HB_SD_0_3 = &HB_pos_pole;
 H_Bridge_typdef *p_HB_SD_4_7 = &HB_neg_pole;
 
-uint8_t HB_pos_pole_index = 2;
-uint8_t HB_neg_pole_index = 7;
+uint8_t HB_pos_pole_index = 1;
+uint8_t HB_neg_pole_index = 6;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: H Bridge Driver Init :::::::: */
@@ -110,7 +110,7 @@ void H_Bridge_Driver_Init(void)
 {   
     for (uint8_t i = 0; i < 4; i++)
     {
-        LL_TIM_OC_SetMode(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i],  HB_PWM_SD0_3.Mode);
+        LL_TIM_OC_SetMode(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i],  LL_TIM_OCMODE_FORCED_INACTIVE);
         LL_TIM_OC_SetPolarity(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i], HB_PWM_SD0_3.Polarity);
         LL_TIM_OC_EnablePreload(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i]);
         LL_TIM_CC_EnableChannel(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i]);
@@ -119,7 +119,7 @@ void H_Bridge_Driver_Init(void)
 
     for (uint8_t i = 4; i < 8; i++)
     {
-        LL_TIM_OC_SetMode(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i],  HB_PWM_SD4_7.Mode);
+        LL_TIM_OC_SetMode(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i],  LL_TIM_OCMODE_FORCED_INACTIVE);
         LL_TIM_OC_SetPolarity(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i], HB_PWM_SD4_7.Polarity);
         LL_TIM_OC_EnablePreload(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i]);
         LL_TIM_CC_EnableChannel(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i]);
@@ -141,13 +141,12 @@ void H_Bridge_Driver_Init(void)
     LL_TIM_EnableARRPreload(H_BRIDGE_SD0_3_HANDLE);
     LL_TIM_EnableARRPreload(H_BRIDGE_SD4_7_HANDLE);
 
-    LL_TIM_SetUpdateSource(H_BRIDGE_SD0_3_HANDLE, LL_TIM_UPDATESOURCE_REGULAR);
-    LL_TIM_SetUpdateSource(H_BRIDGE_SD4_7_HANDLE, LL_TIM_UPDATESOURCE_REGULAR);
-
     LL_TIM_DisableIT_UPDATE(H_BRIDGE_SD0_3_HANDLE);
+    LL_TIM_SetUpdateSource(H_BRIDGE_SD0_3_HANDLE, LL_TIM_UPDATESOURCE_REGULAR);
     LL_TIM_GenerateEvent_UPDATE(H_BRIDGE_SD0_3_HANDLE);
 
     LL_TIM_DisableIT_UPDATE(H_BRIDGE_SD4_7_HANDLE);
+    LL_TIM_SetUpdateSource(H_BRIDGE_SD4_7_HANDLE, LL_TIM_UPDATESOURCE_REGULAR);
     LL_TIM_GenerateEvent_UPDATE(H_BRIDGE_SD4_7_HANDLE);
 
     LL_TIM_EnableCounter(H_BRIDGE_SD0_3_HANDLE);

@@ -78,11 +78,11 @@ int CMD_SET_CB_CONTROL(int argc, char *argv[])
 
 	if (receive_argm == 1)
 	{
-		V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+		V_Switch_Set_Mode(V_SWITCH_MODE_CB_ON);
 	}
 	else
 	{
-		V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+		V_Switch_Set_Mode(V_SWITCH_MODE_CB_OFF);
 	}
 	
 	return CMDLINE_OK;
