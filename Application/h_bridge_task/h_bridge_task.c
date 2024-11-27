@@ -14,9 +14,7 @@
 typedef enum
 {
     H_BRIDGE_STOP_STATE,
-    H_BRIDGE_HV_W_1_STATE,
     H_BRIDGE_HV_1_STATE,
-    H_BRIDGE_HV_W_2_STATE,
     H_BRDIGE_HV_2_STATE,
     H_BRIDGE_LV_1_STATE,
     H_BRIDGE_LV_2_STATE,
@@ -84,13 +82,12 @@ void H_Bridge_Task(void*)
             if (hv_pulse_pos_count != 0)
             {
                 V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
-                hv_w1_count = 0;
 
-                /* H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+                H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
                 H_Bridge_Set_Pulse_Timing(&HB_pos_pole, 1, hv_on_time_ms, hv_off_time_ms, hv_pulse_pos_count);
-                H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_PULSE); */
+                H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_PULSE);
 
-                H_Bridge_State = H_BRIDGE_HV_W_1_STATE;
+                H_Bridge_State = H_BRIDGE_HV_1_STATE;
             }
             else if (hv_pulse_neg_count != 0)
             {
@@ -129,20 +126,6 @@ void H_Bridge_Task(void*)
             }
         }
         break;
-    case H_BRIDGE_HV_W_1_STATE:
-        if ( 1)
-        {
-            H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
-            H_Bridge_Set_Pulse_Timing(&HB_pos_pole, 1, hv_on_time_ms, hv_off_time_ms, hv_pulse_pos_count);
-            H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_PULSE);
-            hv_w1_count = 0;
-            H_Bridge_State = H_BRIDGE_HV_1_STATE;
-            break;
-        }
-        
-        hv_w1_count++;
-
-        break;
     case H_BRIDGE_HV_1_STATE:
         if(is_h_bridge_enable == false)
         {
@@ -153,13 +136,12 @@ void H_Bridge_Task(void*)
             if (hv_pulse_neg_count != 0)
             {
                 V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
-                hv_w2_count = 0;
 
-                /* H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_LS_ON);
+                H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_LS_ON);
                 H_Bridge_Set_Pulse_Timing(&HB_neg_pole, hv_delay_ms, hv_on_time_ms, hv_off_time_ms, hv_pulse_neg_count);
-                H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_PULSE); */
+                H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_PULSE);
 
-                H_Bridge_State = H_BRIDGE_HV_W_2_STATE;
+                H_Bridge_State = H_BRDIGE_HV_2_STATE;
             }
             else if (lv_pulse_pos_count != 0)
             {
@@ -187,20 +169,6 @@ void H_Bridge_Task(void*)
                 H_Bridge_State = H_BRIDGE_STOP_STATE;
             }
         }
-        break;
-    case H_BRIDGE_HV_W_2_STATE:
-        if (1)
-        {
-            H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_LS_ON);
-            H_Bridge_Set_Pulse_Timing(&HB_neg_pole, hv_delay_ms, hv_on_time_ms, hv_off_time_ms, hv_pulse_neg_count);
-            H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_PULSE);
-            hv_w2_count = 0;
-            H_Bridge_State = H_BRDIGE_HV_2_STATE;
-            break;
-        }
-        
-        hv_w2_count++;
-
         break;
     case H_BRDIGE_HV_2_STATE:
         if(is_h_bridge_enable == false)

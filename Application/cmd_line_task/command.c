@@ -32,9 +32,6 @@ static void 	double_to_string(double value, char *buffer, uint8_t precision);
 
 tCmdLineEntry g_psCmdTable[] =
 {
-	{ "SET_CB_CONTROL",			CMD_SET_CB_CONTROL, 		" : Set pole for H Bridge Pole" },
-	{ "SET_G_CONTROL",			CMD_SET_G_CONTROL, 			" : Set pole for H Bridge Pole" },
-
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Pulse Control Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	{ "SET_PULSE_POLE",			CMD_SET_PULSE_POLE, 		" : Set pole for H Bridge Pole" },
     { "SET_PULSE_COUNT",		CMD_SET_PULSE_COUNT, 		" : Set number of pulse" },
@@ -66,50 +63,6 @@ tCmdLineEntry g_psCmdTable[] =
 	{0,0,0}
 };
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-int CMD_SET_CB_CONTROL(int argc, char *argv[])
-{
-	if (argc < 2)
-		return CMDLINE_TOO_FEW_ARGS;
-	else if (argc > 2)
-		return CMDLINE_TOO_MANY_ARGS;
-
-	int receive_argm = 0;
-	receive_argm = atoi(argv[1]);
-
-	if (receive_argm == 1)
-	{
-		V_Switch_Set_Mode(V_SWITCH_MODE_CB_ON);
-	}
-	else
-	{
-		V_Switch_Set_Mode(V_SWITCH_MODE_CB_OFF);
-	}
-	
-	return CMDLINE_OK;
-}
-
-int CMD_SET_G_CONTROL(int argc, char *argv[])
-{
-	if (argc < 2)
-		return CMDLINE_TOO_FEW_ARGS;
-	else if (argc > 2)
-		return CMDLINE_TOO_MANY_ARGS;
-
-	int receive_argm = 0;
-	receive_argm = atoi(argv[1]);
-
-	if (receive_argm == 1)
-	{
-		LL_GPIO_SetOutputPin(V_Switch_HV.Port, V_Switch_HV.Pin);
-	}
-	else
-	{
-		LL_GPIO_ResetOutputPin(V_Switch_HV.Port, V_Switch_HV.Pin);
-	}
-	
-	return CMDLINE_OK;
-}
-
 /* :::::::::: Pulse Control Command :::::::: */
 int CMD_SET_PULSE_POLE(int argc, char *argv[])
 {

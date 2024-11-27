@@ -13,8 +13,6 @@ typedef enum _V_Switch_mode_typedef_
     V_SWITCH_MODE_HV_ON,
     V_SWITCH_MODE_LV_ON,
     V_SWITCH_MODE_ALL_OFF,
-    V_SWITCH_MODE_CB_ON,
-    V_SWITCH_MODE_CB_OFF,
 }V_Switch_mode;
 
 typedef struct _V_Switch_typdef_
