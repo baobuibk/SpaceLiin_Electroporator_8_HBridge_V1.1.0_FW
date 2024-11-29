@@ -12,28 +12,35 @@ tSchedulerTask 	g_psSchedulerTable[SCHEDULER_TASK_COUNT] =
                             (void *) 0,
                             2,                          //call every 500us
                             0,                          //count from start
-                            true                       //is active
+                            true                        //is active
                     },
                     {
                             &CMD_Line_Task,
                             (void *) 0,
                             10,                         //call every 1ms
                             0,                          //count from start
-                            true                       //is active
+                            true                        //is active
                     },
                     {
                             &FSP_Line_Task,
                             (void *) 0,
                             20,                         //call every 1ms
                             0,                          //count from start
-                            true                       //is active
+                            true                        //is active
+                    },
+                    {
+                            &Current_Sense_Task,
+                            (void *) 0,
+                            10,                         //call every 1ms
+                            0,                          //count from start
+                            false                       //is active
                     },
                     {
                             &Sensor_Read_Task,
                             (void *) 0,
                             10,                         //call every 1ms
                             0,                          //count from start
-                            true                       //is active
+                            true                        //is active
                     },
                     {
                             &Status_Led,
@@ -54,10 +61,10 @@ void App_Main(void)
     H_Bridge_Driver_Init();
     V_Switch_Driver_Init();
     FSP_Line_Task_Init();
+    Current_Sense_Task_Init(LL_ADC_SAMPLINGTIME_15CYCLES);
     Sensor_Task_Init();
     
     /*
-    Current_Sense_Task_Init(LL_ADC_SAMPLINGTIME_7CYCLES_5);
     BMP390_init();
     */
 

@@ -48,6 +48,9 @@ tCmdLineEntry g_psCmdTable[] =
 	{ "GET_PULSE_CONTROL", 		CMD_GET_PULSE_CONTROL, 		" : Get info whether pulse starting pulsing" },
 	{ "GET_PULSE_ALL", 			CMD_GET_PULSE_ALL, 			" : Get all info about pulse" },
 
+	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ VOM Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	{ "MEASURE_IMPEDANCE", 		CMD_MEASURE_IMPEDANCE,		" : Measure cuvette impedance"},
+
 	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ I2C Sensor Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	{ "GET_SENSOR_GYRO", 		CMD_GET_SENSOR_GYRO, 		" : Get gyro" },
 	{ "GET_SENSOR_ACCEL", 		CMD_GET_SENSOR_ACCEL, 		" : Get accel" },
@@ -325,6 +328,31 @@ int CMD_GET_PULSE_ALL(int argc, char *argv[])
 
 	UART_Printf(&RS232_UART, "> %s\n", 
 	is_h_bridge_enable ? "H BRIDGE IS PULSING" : "H BRIDGE IS NOT PULSING");
+
+	return CMDLINE_OK;
+}
+
+/* :::::::::: VOM Command :::::::: */
+int CMD_MEASURE_IMPEDANCE(int argc, char *argv[])
+{
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+	
+	is_Measure_Impedance 	= true;
+
+    Current_Sense_Period	= atoi(argv[1]);
+	
+    is_h_bridge_enable 		= false;
+
+	H_Bridge_Set_Pole();
+    V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
+
+    LL_ADC_REG_StartConversionSWStart(ADC_I_SENSE_HANDLE);
+    SchedulerTaskEnable(3, 1);
 
 	return CMDLINE_OK;
 }
