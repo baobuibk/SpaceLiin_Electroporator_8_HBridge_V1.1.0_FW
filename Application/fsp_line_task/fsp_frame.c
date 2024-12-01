@@ -39,6 +39,16 @@ switch (ps_FSP_RX->CMD)
 {
 
 /* :::::::::: Pulse Control Command :::::::: */
+case FSP_CMD_SET_PULSE_POLE:
+{
+	HB_pos_pole_index 	= ps_FSP_RX->Payload.set_pulse_pole.pos_pole - 1;
+
+	HB_neg_pole_index 	= ps_FSP_RX->Payload.set_pulse_pole.neg_pole - 1;
+
+	UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_POLE\r\n> ");
+	break;
+}
+
 case FSP_CMD_SET_PULSE_COUNT:
 {
 	hv_pulse_pos_count 	= ps_FSP_RX->Payload.set_pulse_count.HV_pos_count;
@@ -98,8 +108,33 @@ case FSP_CMD_SET_PULSE_CONTROL:
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_CONTROL\r\n> ");
 	break;
 }
-	
 
+
+/* :::::::::: VOM Command :::::::: */
+case FSP_CMD_MEASURE_IMPEDANCE:
+{
+	is_Measure_Impedance 	= true;
+
+    Current_Sense_Period	= ps_FSP_RX->Payload.measure_impedance.Period_high;
+	Current_Sense_Period	= Current_Sense_Period << 8;
+	Current_Sense_Period	|= ps_FSP_RX->Payload.measure_impedance.Period_low;
+	
+    is_h_bridge_enable 		= false;
+
+	H_Bridge_Set_Pole();
+    V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
+
+    LL_ADC_REG_StartConversionSWStart(ADC_I_SENSE_HANDLE);
+    SchedulerTaskEnable(3, 1);
+
+    UART_Send_String(&RS232_UART, "Received FSP_CMD_GET_IMPEDANCE\r\n> ");
+    break;
+}
+
+
+/* :::::::::: Ultility Command :::::::: */
 case FSP_CMD_HANDSHAKE:
 {
 	ps_FSP_TX->CMD = FSP_CMD_HANDSHAKE;

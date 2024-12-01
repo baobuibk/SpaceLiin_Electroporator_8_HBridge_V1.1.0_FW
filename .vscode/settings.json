@@ -3,6 +3,14 @@
         "app.h": "c",
         "h_bridge_driver.h": "c",
         "cmd_line.h": "c",
-        "command.h": "c"
+        "command.h": "c",
+        "stm32f405xx.h": "c",
+        "sensor_task.h": "c",
+        "crc.h": "c",
+        "adc.h": "c",
+        "stdint.h": "c",
+        "stm32f4xx_ll_adc.h": "c",
+        "current_sense_task.h": "c",
+        "stdbool.h": "c"
     }
 }

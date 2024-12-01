@@ -21,8 +21,8 @@
 #include "v_switch_task.h"
 #include "fsp_line_task.h"
 #include "sensor_task.h"
+#include "current_sense_task.h"
 /*
-#include "adc_task.h"
 #include "impedance_task.h"
 #include "BMP390.h"
 */

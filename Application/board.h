@@ -64,6 +64,21 @@
 #define V_SWITCH_HIN2_PIN       LL_GPIO_PIN_0
 /***********************************************/
 
+/**************CURRENT MONITOR*****************/
+#define ADC_I_SENSE_HANDLE      ADC1
+#define ADC_I_SENSE_CHANNEL     LL_ADC_CHANNEL_10
+#define ADC_I_SENSE_IRQ         ADC_IRQn
+
+//#define I_SENSE_TIMER_HANDLE    TIM3
+
+//#define OCP_ALERT_PORT          GPIOC
+//#define OCP_ALERT_PIN           LL_GPIO_PIN_13
+
+//#define I_SENSE_RESET_PORT      GPIOA
+//#define I_SENSE_RESET_PIN       LL_GPIO_PIN_15
+#define ADC_CHANNEL_COUNT		1
+/***********************************************/
+
 /*********************UART**********************/
 #define RS232_UART_HANDLE       UART4
 #define RS232_UART_IRQ          UART4_IRQn

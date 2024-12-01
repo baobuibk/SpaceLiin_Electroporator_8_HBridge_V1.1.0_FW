@@ -84,7 +84,8 @@ typedef struct _MEASURE_CURRENT_FRAME_
 
 typedef struct _MEASURE_IMPEDANCE_FRAME_
 {
-	uint8_t		Period;
+	uint8_t		Period_high;
+	uint8_t		Period_low;
 	uint8_t 	Value_high;
 	uint8_t 	Value_low;
 

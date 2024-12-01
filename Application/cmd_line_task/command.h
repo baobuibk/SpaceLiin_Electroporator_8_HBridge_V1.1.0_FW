@@ -27,6 +27,9 @@ int CMD_GET_PULSE_LV(int argc, char *argv[]);
 int CMD_GET_PULSE_CONTROL(int argc, char *argv[]);
 int CMD_GET_PULSE_ALL(int argc, char *argv[]);
 
+/* :::::::::: VOM Command :::::::: */
+int CMD_MEASURE_IMPEDANCE(int argc, char *argv[]);
+
 /* :::::::::: I2C Sensor Command :::::::: */
 int CMD_GET_SENSOR_GYRO(int argc, char *argv[]);
 int CMD_GET_SENSOR_ACCEL(int argc, char *argv[]);
