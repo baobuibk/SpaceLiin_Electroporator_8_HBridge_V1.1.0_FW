@@ -43,6 +43,8 @@ FSP_Payload 		*ps_FSP_RX = (FSP_Payload*) (&s_FSP_RX_Packet.payload);
 fsp_line_typedef 	FSP_line;
 char 				g_FSP_line_buffer[FSP_BUF_LEN];
 
+uint8_t				FSP_line_return = 0;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: FSP Line Task Init :::::::: */
 void FSP_Line_Task_Init()
@@ -81,8 +83,18 @@ void FSP_Line_Task(void*)
 
 			UART_Printf(&RS232_UART, "%s> ", ErrorCode[FSP_return]);
 
-			if (FSP_return == FSP_PKT_READY)
-				FSP_Line_Process();
+			if (FSP_return != FSP_PKT_READY)
+			{
+				FSP_line.write_index = 0;
+				continue;
+			}
+				
+			FSP_line_return = FSP_Line_Process();
+			
+			if (FSP_line_return == 0)
+			{
+				return;
+			}
 			
 			FSP_line.write_index = 0;
 		} 
@@ -96,6 +108,19 @@ void FSP_Line_Task(void*)
 
 		}
 	}
+
+	if (FSP_line_return == 0)
+	{
+		FSP_line_return = FSP_Line_Process();
+
+		if (FSP_line_return == 0)
+		{
+			return;
+		}
+		
+		FSP_line.write_index = 0;
+	}
+	
 }
 
 /* :::::::::: IRQ Handler ::::::::::::: */

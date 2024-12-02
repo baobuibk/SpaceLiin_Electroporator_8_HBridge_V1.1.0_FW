@@ -18,8 +18,13 @@ typedef enum _FSP_CMD_typedef_
 	FSP_CMD_MEASURE_IMPEDANCE,
 
 	/* :::::::::: I2C Sensor Command :::::::: */
-	FSP_CMD_GET_BMP390,
-	FSP_CMD_GET_LMSDOX,
+	FSP_CMD_SENSOR_GET_TEMP,
+	FSP_CMD_SENSOR_GET_PRESSURE,
+	FSP_CMD_SENSOR_GET_BMP390,
+
+	FSP_CMD_SENSOR_GET_GYRO,
+	FSP_CMD_SENSOR_GET_ACCEL,
+	FSP_CMD_SENSOR_GET_LSM6DSOX,
 
 	/* :::::::::: Ultility Command :::::::: */
 	FSP_CMD_HANDSHAKE,
@@ -92,23 +97,51 @@ typedef struct _MEASURE_IMPEDANCE_FRAME_
 } MEASURE_IMPEDANCE_FRAME;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ I2C Sensor Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-typedef struct _GET_BMP390_
+typedef struct _GET_SENSOR_TEMP_
+{
+	uint8_t 	temp[5];
+
+} GET_SENSOR_TEMP;
+
+typedef struct _GET_SENSOR_PRESSURE_
+{
+	uint8_t 	pressure[6];
+
+} GET_SENSOR_PRESSURE;
+
+typedef struct _GET_SENSOR_BMP390_
 {
 	uint8_t 	temp[5];
 	uint8_t 	pressure[6];
 
-} GET_BMP390;
+} GET_SENSOR_BMP390;
 
-typedef struct _GET_LSMDOX_
+typedef struct _GET_SENSOR_ACCEL_
 {
-	uint8_t 	accel_x[4];
-	uint8_t 	accel_y[4];
-	uint8_t 	accel_z[4];
-	uint8_t 	gyro_x[4];
-	uint8_t 	gyro_y[4];
-	uint8_t 	gyro_z[4];
+	uint8_t 	accel_x[2];
+	uint8_t 	accel_y[2];
+	uint8_t 	accel_z[2];
 
-} GET_LSMDOX;
+} GET_SENSOR_ACCEL;
+
+typedef struct _GET_SENSOR_GYRO_
+{
+	uint8_t 	gyro_x[2];
+	uint8_t 	gyro_y[2];
+	uint8_t 	gyro_z[2];
+
+} GET_SENSOR_GYRO;
+
+typedef struct _GET_SENSOR_LSM6DSOX_
+{
+	uint8_t 	accel_x[2];
+	uint8_t 	accel_y[2];
+	uint8_t 	accel_z[2];
+	uint8_t 	gyro_x[2];
+	uint8_t 	gyro_y[2];
+	uint8_t 	gyro_z[2];
+
+} GET_SENSOR_LSM6DSOX;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Ultility Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef struct _FSP_HANDSAKE_
@@ -133,8 +166,13 @@ typedef union _FSP_Payload_Frame_typedef_
 	MEASURE_IMPEDANCE_FRAME					measure_impedance;
 
 	/* :::::::::: I2C Sensor Command :::::::: */
-	GET_BMP390								get_BMP390;
-	GET_LSMDOX								get_LSMDOX;
+	GET_SENSOR_TEMP							get_sensor_temp;
+	GET_SENSOR_PRESSURE						get_sensor_pressure;
+	GET_SENSOR_BMP390						get_sensor_BMP390;
+
+	GET_SENSOR_ACCEL						get_sensor_accel;
+	GET_SENSOR_GYRO							get_sensor_gyro;
+	GET_SENSOR_LSM6DSOX						get_sensor_LSM6DSOX;
 
 	/* :::::::::: Ultility Command :::::::: */
 	FSP_HANDSAKE							handshake;
@@ -149,6 +187,6 @@ typedef struct _FSP_Payload_typedef_
 } FSP_Payload;
 
 /* :::::::::: FSP Line Process ::::::::::::: */
-void FSP_Line_Process();
+uint8_t FSP_Line_Process();
 
 #endif

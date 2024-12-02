@@ -103,7 +103,7 @@ void CMD_Line_Task(void*)
     {
         CMD_line.RX_char = UART_Get_Char(&RS232_UART);
 
-        if (g_CMD_line_return == CMDLINE_IS_PROCESSING)
+        if ((g_CMD_line_return == CMDLINE_IS_PROCESSING) && (is_warned_user == false))
         {
             UART_Send_String(&RS232_UART, "COMMAND IS BEING PROCESSED, PLEASE WAIT\n");
             UART_Send_String(&RS232_UART, "> ");

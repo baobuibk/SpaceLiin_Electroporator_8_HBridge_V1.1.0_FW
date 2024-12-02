@@ -1,6 +1,7 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Include~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "app.h"
 
@@ -19,8 +20,8 @@
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static void fsp_print(uint8_t packet_length);
-//static void convertTemperature(float temp, uint8_t buf[]);
-//static void convertIntegerToBytes(int number, uint8_t arr[]);
+static void double_to_string(double value, uint8_t *buffer, uint8_t precision);
+static void convertIntegerToBytes(int number, uint8_t *arr);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /*
@@ -31,9 +32,11 @@ float           temp;
 uint32_t        press;
 */
 
+uint8_t FSP_line_process_state = 0;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 uint8_t hs_relay_pole, ls_relay_pole, relay_state;
-void FSP_Line_Process()
+uint8_t FSP_Line_Process()
 {
 switch (ps_FSP_RX->CMD)
 {
@@ -46,7 +49,7 @@ case FSP_CMD_SET_PULSE_POLE:
 	HB_neg_pole_index 	= ps_FSP_RX->Payload.set_pulse_pole.neg_pole - 1;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_POLE\r\n> ");
-	break;
+	return 1;
 }
 
 case FSP_CMD_SET_PULSE_COUNT:
@@ -58,7 +61,7 @@ case FSP_CMD_SET_PULSE_COUNT:
 	lv_pulse_neg_count 	= ps_FSP_RX->Payload.set_pulse_count.LV_neg_count;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_COUNT\r\n> ");
-	break;
+	return 1;
 }
 	
 
@@ -72,7 +75,7 @@ case FSP_CMD_SET_PULSE_DELAY:
 	pulse_delay_ms |= ps_FSP_RX->Payload.set_pulse_delay.Delay_low;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_DELAY\r\n> ");
-	break;
+	return 1;
 }
 	
 
@@ -82,7 +85,7 @@ case FSP_CMD_SET_PULSE_HV:
 	hv_off_time_ms 	= ps_FSP_RX->Payload.set_pulse_HV.OffTime;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_HV\r\n> ");
-	break;
+	return 1;
 }
 	
 case FSP_CMD_SET_PULSE_LV:
@@ -96,7 +99,7 @@ case FSP_CMD_SET_PULSE_LV:
 	lv_off_time_ms	|= ps_FSP_RX->Payload.set_pulse_LV.OffTime_low;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_LV\r\n> ");
-	break;
+	return 1;
 }
 	
 case FSP_CMD_SET_PULSE_CONTROL:
@@ -106,7 +109,7 @@ case FSP_CMD_SET_PULSE_CONTROL:
 	SchedulerTaskEnable(0, 1);
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_CONTROL\r\n> ");
-	break;
+	return 1;
 }
 
 
@@ -130,9 +133,225 @@ case FSP_CMD_MEASURE_IMPEDANCE:
     SchedulerTaskEnable(3, 1);
 
     UART_Send_String(&RS232_UART, "Received FSP_CMD_GET_IMPEDANCE\r\n> ");
-    break;
+    return 1;
 }
 
+
+/* :::::::::: I2C Sensor Command :::::::: */
+case FSP_CMD_SENSOR_GET_TEMP:
+{
+switch (FSP_line_process_state)
+{
+case 0:
+{
+	Sensor_Read_Value(SENSOR_READ_TEMP);
+	FSP_line_process_state = 1;
+	return 0;
+}
+	
+
+case 1:
+{
+	if (is_sensor_read_finished == false)
+	{
+		return 0;
+	}
+
+	is_sensor_read_finished = false;
+	ps_FSP_TX->CMD = FSP_CMD_SENSOR_GET_TEMP;
+	double_to_string(Sensor_Temp, ps_FSP_TX->Payload.get_sensor_temp.temp, 2);
+
+	fsp_print(6);
+	FSP_line_process_state = 0;
+	return 1;
+}
+
+
+default:
+	return 0;
+}
+}
+
+case FSP_CMD_SENSOR_GET_PRESSURE:
+{
+switch (FSP_line_process_state)
+{
+case 0:
+{
+	Sensor_Read_Value(SENSOR_READ_PRESSURE);
+	FSP_line_process_state = 1;
+	return 0;
+
+}
+	
+
+case 1:
+{
+	if (is_sensor_read_finished == false)
+	{
+		return 0;
+	}
+
+	is_sensor_read_finished = false;
+	ps_FSP_TX->CMD = FSP_CMD_SENSOR_GET_PRESSURE;
+	double_to_string(Sensor_Pressure, ps_FSP_TX->Payload.get_sensor_pressure.pressure, 0);
+
+	fsp_print(7);
+	FSP_line_process_state = 0;
+	return 1;
+}
+
+default:
+	return 0;
+}
+}
+
+case FSP_CMD_SENSOR_GET_BMP390:
+{
+switch (FSP_line_process_state)
+{
+case 0:
+{
+	Sensor_Read_Value(SENSOR_READ_BMP390);
+	FSP_line_process_state = 1;
+	return 0;
+
+}
+	
+
+case 1:
+{
+	if (is_sensor_read_finished == false)
+	{
+		return 0;
+	}
+
+	is_sensor_read_finished = false;
+	ps_FSP_TX->CMD = FSP_CMD_SENSOR_GET_BMP390;
+	double_to_string(Sensor_Temp, ps_FSP_TX->Payload.get_sensor_BMP390.temp, 2);
+	double_to_string(Sensor_Pressure, ps_FSP_TX->Payload.get_sensor_BMP390.pressure, 0);
+
+	fsp_print(12);
+	FSP_line_process_state = 0;
+	return 1;
+}
+
+default:
+	return 0;
+}
+}
+
+case FSP_CMD_SENSOR_GET_ACCEL:
+{
+switch (FSP_line_process_state)
+{
+case 0:
+{
+	Sensor_Read_Value(SENSOR_READ_ACCEL);
+	FSP_line_process_state = 1;
+	return 0;
+
+}
+	
+
+case 1:
+{
+	if (is_sensor_read_finished == false)
+	{
+		return 0;
+	}
+
+	is_sensor_read_finished = false;
+	ps_FSP_TX->CMD = FSP_CMD_SENSOR_GET_ACCEL;
+	convertIntegerToBytes(Sensor_Accel.x, ps_FSP_TX->Payload.get_sensor_accel.accel_x);
+	convertIntegerToBytes(Sensor_Accel.y, ps_FSP_TX->Payload.get_sensor_accel.accel_y);
+	convertIntegerToBytes(Sensor_Accel.z, ps_FSP_TX->Payload.get_sensor_accel.accel_z);
+
+	fsp_print(7);
+	FSP_line_process_state = 0;
+	return 1;
+}
+
+default:
+	return 0;
+}
+}
+
+case FSP_CMD_SENSOR_GET_GYRO:
+{
+switch (FSP_line_process_state)
+{
+case 0:
+{
+	Sensor_Read_Value(SENSOR_READ_GYRO);
+	FSP_line_process_state = 1;
+	return 0;
+
+}
+	
+
+case 1:
+{
+	if (is_sensor_read_finished == false)
+	{
+		return 0;
+	}
+
+	is_sensor_read_finished = false;
+	ps_FSP_TX->CMD = FSP_CMD_SENSOR_GET_GYRO;
+	convertIntegerToBytes(Sensor_Gyro.x, ps_FSP_TX->Payload.get_sensor_gyro.gyro_x);
+	convertIntegerToBytes(Sensor_Gyro.y, ps_FSP_TX->Payload.get_sensor_gyro.gyro_y);
+	convertIntegerToBytes(Sensor_Gyro.z, ps_FSP_TX->Payload.get_sensor_gyro.gyro_z);
+
+	fsp_print(7);
+	FSP_line_process_state = 0;
+	return 1;
+}
+
+default:
+	return 0;
+}
+}
+
+case FSP_CMD_SENSOR_GET_LSM6DSOX:
+{
+switch (FSP_line_process_state)
+{
+case 0:
+{
+	Sensor_Read_Value(SENSOR_READ_LSM6DSOX);
+	FSP_line_process_state = 1;
+	return 0;
+
+}
+	
+
+case 1:
+{
+	if (is_sensor_read_finished == false)
+	{
+		return 0;
+	}
+
+	is_sensor_read_finished = false;
+	ps_FSP_TX->CMD = FSP_CMD_SENSOR_GET_LSM6DSOX;
+	convertIntegerToBytes(Sensor_Accel.x, ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_x);
+	convertIntegerToBytes(Sensor_Accel.y, ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_y);
+	convertIntegerToBytes(Sensor_Accel.z, ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_z);
+
+	convertIntegerToBytes(Sensor_Gyro.x, ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_x);
+	convertIntegerToBytes(Sensor_Gyro.y, ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_y);
+	convertIntegerToBytes(Sensor_Gyro.z, ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_z);
+
+	fsp_print(13);
+	FSP_line_process_state = 0;
+	return 1;
+}
+
+default:
+	return 0;
+}
+}
 
 /* :::::::::: Ultility Command :::::::: */
 case FSP_CMD_HANDSHAKE:
@@ -143,11 +362,11 @@ case FSP_CMD_HANDSHAKE:
 	fsp_print(2);
 	
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_HANDSHAKE\r\n> ");
-	break;
+	return 1;
 }
 	
 default:
-	break;
+	return 0;
 }
 }
 
@@ -170,19 +389,46 @@ static void fsp_print(uint8_t packet_length)
 	UART_FSP(&GPC_UART, (char*)encoded_frame, frame_len);
 }
 
-/*
-static void convertTemperature(float temp, uint8_t buf[]) {
-	// temperature is xxx.x format
-	//float to byte
+static void double_to_string(double value, uint8_t *buffer, uint8_t precision)
+{
+    // Handle negative numbers
+    if (value < 0)
+	{
+        *buffer++ = '-';
+        value = -value;
+    }
 
-	gcvt(temp, 5, buf);
+    // Extract the integer part
+    uint32_t integer_part  = (uint32_t)value;
+    double fractional_part = value - integer_part;
+
+    // Convert integer part to string
+    sprintf((char*)buffer, "%ld", integer_part);
+    while (*buffer) buffer++; // Move pointer to the end of the integer part
+
+    // Add decimal point
+    if (precision > 0)
+	{
+        *buffer++ = '.';
+
+        // Extract and convert the fractional part
+        for (uint8_t i = 0; i < precision; i++)
+		{
+            fractional_part *= 10;
+            uint8_t digit = (uint8_t)fractional_part;
+            *buffer++ = '0' + digit;
+            fractional_part -= digit;
+        }
+    }
+
+    // Null-terminate the string
+    *buffer = '\0';
 }
 
-static void convertIntegerToBytes(int number, uint8_t arr[]) {
-	arr[0]= number & 0xff;
-	arr[1]= (number >>8 ) & 0xff;
-	arr[2] = (number >>16) & 0xff;
-	arr[3] = (number >>24) & 0xff;
+static void convertIntegerToBytes(int number, uint8_t *arr)
+{
+	arr[0] =  number       & 0xff;
+	arr[1] = (number >>8 ) & 0xff;
 }
-*/
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
