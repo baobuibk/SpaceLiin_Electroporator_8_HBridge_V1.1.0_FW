@@ -30,26 +30,6 @@ uint32_t HB_PWM_channel_array[8] =
     H_BRIDGE_SD7_CHANNEL,
 };
 
-PWM_TypeDef HB_PWM_SD0_3 =
-{
-    .TIMx       =   H_BRIDGE_SD0_3_HANDLE,
-    .Prescaler  =   1199,
-    .Mode       =   LL_TIM_OCMODE_FORCED_INACTIVE,
-    .Polarity   =   LL_TIM_OCPOLARITY_HIGH,
-    .Duty       =   3, //100us
-    .Freq       =   0,
-};
-
-PWM_TypeDef HB_PWM_SD4_7 =
-{
-    .TIMx       =   H_BRIDGE_SD4_7_HANDLE,
-    .Prescaler  =   1199,
-    .Mode       =   LL_TIM_OCMODE_FORCED_INACTIVE,
-    .Polarity   =   LL_TIM_OCPOLARITY_HIGH,
-    .Duty       =   3, //100us
-    .Freq       =   0,
-};
-
 uint32_t HB_pin_array[8] =
 {
     H_BRIDGE_HIN0_PIN,
@@ -74,8 +54,16 @@ bool HB_pin_state_array[8] =
     0,
 };
 
+uint8_t HB_pos_pole_index = 1;
+uint8_t HB_neg_pole_index = 6;
+
 H_Bridge_typdef HB_pos_pole =
 {
+    .PWM =
+    {
+        .Mode           = LL_TIM_OCMODE_FORCED_INACTIVE,
+        .Polarity       = LL_TIM_OCPOLARITY_HIGH,
+    },
     .Port               = H_BRIDGE_HIN0_7_PORT,
     .Mode               = H_BRIDGE_MODE_LS_ON,
     .delay_time_ms      = 0,
@@ -88,6 +76,11 @@ H_Bridge_typdef HB_pos_pole =
 
 H_Bridge_typdef HB_neg_pole =
 {
+    .PWM =
+    {
+        .Mode           = LL_TIM_OCMODE_FORCED_INACTIVE,
+        .Polarity       = LL_TIM_OCPOLARITY_HIGH,
+    },
     .Port               = H_BRIDGE_HIN0_7_PORT,
     .Mode               = H_BRIDGE_MODE_LS_ON,
     .delay_time_ms      = 0,
@@ -98,11 +91,8 @@ H_Bridge_typdef HB_neg_pole =
     .is_setted          = false,
 };
 
-H_Bridge_typdef *p_HB_SD_0_3 = &HB_pos_pole;
-H_Bridge_typdef *p_HB_SD_4_7 = &HB_neg_pole;
-
-uint8_t HB_pos_pole_index = 1;
-uint8_t HB_neg_pole_index = 6;
+H_Bridge_typdef* p_HB_SD_0_3_IRQn = &HB_pos_pole;
+H_Bridge_typdef* p_HB_SD_4_7_IRQn = &HB_neg_pole;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: H Bridge Driver Init :::::::: */
@@ -110,19 +100,19 @@ void H_Bridge_Driver_Init(void)
 {   
     for (uint8_t i = 0; i < 4; i++)
     {
-        LL_TIM_OC_SetMode(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i],  LL_TIM_OCMODE_FORCED_INACTIVE);
-        LL_TIM_OC_SetPolarity(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i], HB_PWM_SD0_3.Polarity);
-        LL_TIM_OC_EnablePreload(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i]);
-        LL_TIM_CC_EnableChannel(HB_PWM_SD0_3.TIMx, HB_PWM_channel_array[i]);
+        LL_TIM_OC_SetMode(H_BRIDGE_SD0_3_HANDLE, HB_PWM_channel_array[i],  LL_TIM_OCMODE_FORCED_INACTIVE);
+        LL_TIM_OC_SetPolarity(H_BRIDGE_SD0_3_HANDLE, HB_PWM_channel_array[i], LL_TIM_OCPOLARITY_HIGH);
+        LL_TIM_OC_EnablePreload(H_BRIDGE_SD0_3_HANDLE, HB_PWM_channel_array[i]);
+        LL_TIM_CC_EnableChannel(H_BRIDGE_SD0_3_HANDLE, HB_PWM_channel_array[i]);
         LL_GPIO_ResetOutputPin(H_BRIDGE_HIN0_7_PORT, HB_pin_array[i]);
     }
 
     for (uint8_t i = 4; i < 8; i++)
     {
-        LL_TIM_OC_SetMode(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i],  LL_TIM_OCMODE_FORCED_INACTIVE);
-        LL_TIM_OC_SetPolarity(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i], HB_PWM_SD4_7.Polarity);
-        LL_TIM_OC_EnablePreload(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i]);
-        LL_TIM_CC_EnableChannel(HB_PWM_SD4_7.TIMx, HB_PWM_channel_array[i]);
+        LL_TIM_OC_SetMode(H_BRIDGE_SD4_7_HANDLE, HB_PWM_channel_array[i],  LL_TIM_OCMODE_FORCED_INACTIVE);
+        LL_TIM_OC_SetPolarity(H_BRIDGE_SD4_7_HANDLE, HB_PWM_channel_array[i], LL_TIM_OCPOLARITY_HIGH);
+        LL_TIM_OC_EnablePreload(H_BRIDGE_SD4_7_HANDLE, HB_PWM_channel_array[i]);
+        LL_TIM_CC_EnableChannel(H_BRIDGE_SD4_7_HANDLE, HB_PWM_channel_array[i]);
         LL_GPIO_ResetOutputPin(H_BRIDGE_HIN0_7_PORT, HB_pin_array[i]);
     }
 
@@ -153,19 +143,21 @@ void H_Bridge_Driver_Init(void)
     LL_TIM_EnableCounter(H_BRIDGE_SD4_7_HANDLE);
 }
 
-void H_Bridge_Set_Pole(void)
+void H_Bridge_Set_Pole(uint8_t pos_pole_index, uint8_t neg_pole_index)
 {
-    HB_pos_pole.Pin         = &HB_pin_array[HB_pos_pole_index];
-    HB_pos_pole.Pin_State   = &HB_pin_state_array[HB_pos_pole_index];
+    //Set pole for positive pole
+    HB_pos_pole.Pin         = &HB_pin_array[pos_pole_index];
+    HB_pos_pole.Pin_State   = &HB_pin_state_array[pos_pole_index];
 
-    (HB_pos_pole_index < 4) ? (HB_pos_pole.PWM = HB_PWM_SD0_3) : (HB_pos_pole.PWM = HB_PWM_SD4_7);
-    HB_pos_pole.PWM.Channel = HB_PWM_channel_array[HB_pos_pole_index];
+    (pos_pole_index < 4) ? (HB_pos_pole.PWM.TIMx = H_BRIDGE_SD0_3_HANDLE) : (HB_pos_pole.PWM.TIMx = H_BRIDGE_SD4_7_HANDLE);
+    HB_pos_pole.PWM.Channel = HB_PWM_channel_array[pos_pole_index];
 
-    HB_neg_pole.Pin         = &HB_pin_array[HB_neg_pole_index];
-    HB_neg_pole.Pin_State   = &HB_pin_state_array[HB_neg_pole_index];
+    //Set pole for negative pole
+    HB_neg_pole.Pin         = &HB_pin_array[neg_pole_index];
+    HB_neg_pole.Pin_State   = &HB_pin_state_array[neg_pole_index];
     
-    (HB_neg_pole_index < 4) ? (HB_neg_pole.PWM = HB_PWM_SD0_3) : (HB_neg_pole.PWM = HB_PWM_SD4_7);
-    HB_neg_pole.PWM.Channel = HB_PWM_channel_array[HB_neg_pole_index];
+    (neg_pole_index < 4) ? (HB_neg_pole.PWM.TIMx = H_BRIDGE_SD0_3_HANDLE) : (HB_neg_pole.PWM.TIMx = H_BRIDGE_SD4_7_HANDLE);
+    HB_neg_pole.PWM.Channel = HB_PWM_channel_array[neg_pole_index];
 }
 
 void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
@@ -173,7 +165,7 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
     LL_TIM_DisableIT_UPDATE(H_Bridge_x->PWM.TIMx);
     LL_TIM_DisableCounter(H_Bridge_x->PWM.TIMx);
     LL_TIM_ClearFlag_UPDATE(H_Bridge_x->PWM.TIMx);
-    (H_Bridge_x->PWM.TIMx ==  H_BRIDGE_SD0_3_HANDLE) ? (p_HB_SD_0_3 = H_Bridge_x) : (p_HB_SD_4_7 = H_Bridge_x);
+    (H_Bridge_x->PWM.TIMx ==  H_BRIDGE_SD0_3_HANDLE) ? (p_HB_SD_0_3_IRQn = H_Bridge_x) : (p_HB_SD_4_7_IRQn = H_Bridge_x);
     H_Bridge_x->Mode = SetMode;
 
     switch (SetMode)
@@ -265,6 +257,66 @@ void H_Bridge_Kill(void)
     H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
 }
 
+/* ::::H_Bridge SD Interupt Handle:::: */
+/* void H_Bridge_SD_Interupt_Handle(H_Bridge_typdef* p_HB_SD_IRQn)
+{
+    if(LL_TIM_IsActiveFlag_UPDATE(p_HB_SD_IRQn->PWM.TIMx) == true)
+    {
+        LL_TIM_ClearFlag_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+
+        switch (p_HB_SD_IRQn->Mode)
+        {
+        case H_BRIDGE_MODE_PULSE:
+            p_HB_SD_IRQn->pulse_count++;
+
+            if (p_HB_SD_IRQn->pulse_count >= ((p_HB_SD_IRQn->set_pulse_count * 2) + 1))
+            {
+                LL_TIM_DisableCounter(p_HB_SD_IRQn->PWM.TIMx);
+                return;
+            }
+            
+            if (*p_HB_SD_IRQn->Pin_State == 1)
+            {
+                LL_GPIO_SetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_IRQn->PWM, 1000.0 / (float)p_HB_SD_IRQn->off_time_ms, 0);
+                *p_HB_SD_IRQn->Pin_State = 0;
+            }
+            else
+            {
+                LL_GPIO_ResetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_IRQn->PWM, 1000.0 / (float)p_HB_SD_IRQn->on_time_ms, 0);
+                *p_HB_SD_IRQn->Pin_State = 1;
+            }
+
+            break;
+        case H_BRIDGE_MODE_HS_ON:
+            LL_GPIO_SetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);
+
+            LL_TIM_OC_SetMode(p_HB_SD_IRQn->PWM.TIMx, p_HB_SD_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+            break;
+        case H_BRIDGE_MODE_LS_ON:
+            LL_GPIO_ResetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);
+
+            LL_TIM_OC_SetMode(p_HB_SD_IRQn->PWM.TIMx, p_HB_SD_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+            break;
+        case H_BRIDGE_MODE_FLOAT:
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+            break;
+        
+        default:
+            break;
+        }
+
+        p_HB_SD_IRQn->is_setted = true;
+    }
+} */
+
 /* ::::H_Bridge SD0_3 Interupt Handle:::: */
 void H_Bridge_SD0_3_Interupt_Handle()
 {
@@ -272,56 +324,56 @@ void H_Bridge_SD0_3_Interupt_Handle()
     {
         LL_TIM_ClearFlag_UPDATE(H_BRIDGE_SD0_3_HANDLE);
 
-        switch (p_HB_SD_0_3->Mode)
+        switch (p_HB_SD_0_3_IRQn->Mode)
         {
         case H_BRIDGE_MODE_PULSE:
-            p_HB_SD_0_3->pulse_count++;
+            p_HB_SD_0_3_IRQn->pulse_count++;
 
-            if (p_HB_SD_0_3->pulse_count >= ((p_HB_SD_0_3->set_pulse_count * 2) + 1))
+            if (p_HB_SD_0_3_IRQn->pulse_count >= ((p_HB_SD_0_3_IRQn->set_pulse_count * 2) + 1))
             {
                 LL_TIM_DisableCounter(H_BRIDGE_SD0_3_HANDLE);
                 return;
             }
             
-            if (*p_HB_SD_0_3->Pin_State == 1)
+            if (*p_HB_SD_0_3_IRQn->Pin_State == 1)
             {
-                LL_GPIO_SetOutputPin(p_HB_SD_0_3->Port, *p_HB_SD_0_3->Pin);
-                HB_Set_Freq(&p_HB_SD_0_3->PWM, 1000.0 / (float)p_HB_SD_0_3->off_time_ms, 0);
-                *p_HB_SD_0_3->Pin_State = 0;
+                LL_GPIO_SetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_0_3_IRQn->PWM, 1000.0 / (float)p_HB_SD_0_3_IRQn->off_time_ms, 0);
+                *p_HB_SD_0_3_IRQn->Pin_State = 0;
             }
             else
             {
-                LL_GPIO_ResetOutputPin(p_HB_SD_0_3->Port, *p_HB_SD_0_3->Pin);
-                HB_Set_Freq(&p_HB_SD_0_3->PWM, 1000.0 / (float)p_HB_SD_0_3->on_time_ms, 0);
-                *p_HB_SD_0_3->Pin_State = 1;
+                LL_GPIO_ResetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_0_3_IRQn->PWM, 1000.0 / (float)p_HB_SD_0_3_IRQn->on_time_ms, 0);
+                *p_HB_SD_0_3_IRQn->Pin_State = 1;
             }
 
             break;
         case H_BRIDGE_MODE_HS_ON:
-            LL_GPIO_SetOutputPin(p_HB_SD_0_3->Port, *p_HB_SD_0_3->Pin);
+            LL_GPIO_SetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
 
-            LL_TIM_OC_SetMode(p_HB_SD_0_3->PWM.TIMx, p_HB_SD_0_3->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
-            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3->PWM.TIMx);
-            LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3->PWM.TIMx);
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3->PWM.TIMx);
+            LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
             break;
         case H_BRIDGE_MODE_LS_ON:
-            LL_GPIO_ResetOutputPin(p_HB_SD_0_3->Port, *p_HB_SD_0_3->Pin);
+            LL_GPIO_ResetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
 
-            LL_TIM_OC_SetMode(p_HB_SD_0_3->PWM.TIMx, p_HB_SD_0_3->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
-            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3->PWM.TIMx);
-            LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3->PWM.TIMx);
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3->PWM.TIMx);
+            LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
             break;
         case H_BRIDGE_MODE_FLOAT:
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
             break;
         
         default:
             break;
         }
 
-        p_HB_SD_0_3->is_setted = true;
+        p_HB_SD_0_3_IRQn->is_setted = true;
     }
 }
 
@@ -332,56 +384,56 @@ void H_Bridge_SD4_7_Interupt_Handle()
     {
         LL_TIM_ClearFlag_UPDATE(H_BRIDGE_SD4_7_HANDLE);
 
-        switch (p_HB_SD_4_7->Mode)
+        switch (p_HB_SD_4_7_IRQn->Mode)
         {
         case H_BRIDGE_MODE_PULSE:
-            p_HB_SD_4_7->pulse_count++;
+            p_HB_SD_4_7_IRQn->pulse_count++;
 
-            if (p_HB_SD_4_7->pulse_count >= ((p_HB_SD_4_7->set_pulse_count * 2) + 1))
+            if (p_HB_SD_4_7_IRQn->pulse_count >= ((p_HB_SD_4_7_IRQn->set_pulse_count * 2) + 1))
             {
                 LL_TIM_DisableCounter(H_BRIDGE_SD4_7_HANDLE);
                 return;
             }
 
-            if (*p_HB_SD_4_7->Pin_State == 1)
+            if (*p_HB_SD_4_7_IRQn->Pin_State == 1)
             {
-                LL_GPIO_SetOutputPin(p_HB_SD_4_7->Port, *p_HB_SD_4_7->Pin);
-                HB_Set_Freq(&p_HB_SD_4_7->PWM, 1000.0 / (float)p_HB_SD_4_7->off_time_ms, 0);
-                *p_HB_SD_4_7->Pin_State = 0;
+                LL_GPIO_SetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_4_7_IRQn->PWM, 1000.0 / (float)p_HB_SD_4_7_IRQn->off_time_ms, 0);
+                *p_HB_SD_4_7_IRQn->Pin_State = 0;
             }
             else
             {
-                LL_GPIO_ResetOutputPin(p_HB_SD_4_7->Port, *p_HB_SD_4_7->Pin);
-                HB_Set_Freq(&p_HB_SD_4_7->PWM, 1000.0 / (float)p_HB_SD_4_7->on_time_ms, 0);
-                *p_HB_SD_4_7->Pin_State = 1;
+                LL_GPIO_ResetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_4_7_IRQn->PWM, 1000.0 / (float)p_HB_SD_4_7_IRQn->on_time_ms, 0);
+                *p_HB_SD_4_7_IRQn->Pin_State = 1;
             }
 
             break;
         case H_BRIDGE_MODE_HS_ON:
-            LL_GPIO_SetOutputPin(p_HB_SD_4_7->Port, *p_HB_SD_4_7->Pin);
+            LL_GPIO_SetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
 
-            LL_TIM_OC_SetMode(p_HB_SD_4_7->PWM.TIMx, p_HB_SD_4_7->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
-            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7->PWM.TIMx);
-            LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7->PWM.TIMx);
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7->PWM.TIMx);
+            LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
             break;
         case H_BRIDGE_MODE_LS_ON:
-            LL_GPIO_ResetOutputPin(p_HB_SD_4_7->Port, *p_HB_SD_4_7->Pin);
+            LL_GPIO_ResetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
 
-            LL_TIM_OC_SetMode(p_HB_SD_4_7->PWM.TIMx, p_HB_SD_4_7->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
-            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7->PWM.TIMx);
-            LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7->PWM.TIMx);
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7->PWM.TIMx);
+            LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
             break;
         case H_BRIDGE_MODE_FLOAT:
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
             break;
         
         default:
             break;
         }
 
-        p_HB_SD_4_7->is_setted = true;
+        p_HB_SD_4_7_IRQn->is_setted = true;
     }
 }
 
@@ -526,3 +578,142 @@ __STATIC_INLINE void HB_Set_ARR(PWM_TypeDef *PWMx, uint32_t _ARR, bool apply_now
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+/* PWM_TypeDef HB_PWM_SD0_3 =
+{
+    .TIMx       =   H_BRIDGE_SD0_3_HANDLE,
+    .Prescaler  =   1199,
+    .Mode       =   LL_TIM_OCMODE_FORCED_INACTIVE,
+    .Polarity   =   LL_TIM_OCPOLARITY_HIGH,
+    .Duty       =   3, //100us
+    .Freq       =   0,
+};
+
+PWM_TypeDef HB_PWM_SD4_7 =
+{
+    .TIMx       =   H_BRIDGE_SD4_7_HANDLE,
+    .Prescaler  =   1199,
+    .Mode       =   LL_TIM_OCMODE_FORCED_INACTIVE,
+    .Polarity   =   LL_TIM_OCPOLARITY_HIGH,
+    .Duty       =   3, //100us
+    .Freq       =   0,
+}; */
+
+/* ::::H_Bridge SD0_3 Interupt Handle:::: */
+/* void H_Bridge_SD0_3_Interupt_Handle()
+{
+    if(LL_TIM_IsActiveFlag_UPDATE(H_BRIDGE_SD0_3_HANDLE) == true)
+    {
+        LL_TIM_ClearFlag_UPDATE(H_BRIDGE_SD0_3_HANDLE);
+
+        switch (p_HB_SD_0_3_IRQn->Mode)
+        {
+        case H_BRIDGE_MODE_PULSE:
+            p_HB_SD_0_3_IRQn->pulse_count++;
+
+            if (p_HB_SD_0_3_IRQn->pulse_count >= ((p_HB_SD_0_3_IRQn->set_pulse_count * 2) + 1))
+            {
+                LL_TIM_DisableCounter(H_BRIDGE_SD0_3_HANDLE);
+                return;
+            }
+            
+            if (*p_HB_SD_0_3_IRQn->Pin_State == 1)
+            {
+                LL_GPIO_SetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_0_3_IRQn->PWM, 1000.0 / (float)p_HB_SD_0_3_IRQn->off_time_ms, 0);
+                *p_HB_SD_0_3_IRQn->Pin_State = 0;
+            }
+            else
+            {
+                LL_GPIO_ResetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_0_3_IRQn->PWM, 1000.0 / (float)p_HB_SD_0_3_IRQn->on_time_ms, 0);
+                *p_HB_SD_0_3_IRQn->Pin_State = 1;
+            }
+
+            break;
+        case H_BRIDGE_MODE_HS_ON:
+            LL_GPIO_SetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+
+            LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            break;
+        case H_BRIDGE_MODE_LS_ON:
+            LL_GPIO_ResetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+
+            LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            break;
+        case H_BRIDGE_MODE_FLOAT:
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+            break;
+        
+        default:
+            break;
+        }
+
+        p_HB_SD_0_3_IRQn->is_setted = true;
+    }
+} */
+
+/* ::::H_Bridge SD4_7 Interupt Handle:::: */
+/* void H_Bridge_SD4_7_Interupt_Handle()
+{
+    if(LL_TIM_IsActiveFlag_UPDATE(H_BRIDGE_SD4_7_HANDLE) == true)
+    {
+        LL_TIM_ClearFlag_UPDATE(H_BRIDGE_SD4_7_HANDLE);
+
+        switch (p_HB_SD_4_7_IRQn->Mode)
+        {
+        case H_BRIDGE_MODE_PULSE:
+            p_HB_SD_4_7_IRQn->pulse_count++;
+
+            if (p_HB_SD_4_7_IRQn->pulse_count >= ((p_HB_SD_4_7_IRQn->set_pulse_count * 2) + 1))
+            {
+                LL_TIM_DisableCounter(H_BRIDGE_SD4_7_HANDLE);
+                return;
+            }
+
+            if (*p_HB_SD_4_7_IRQn->Pin_State == 1)
+            {
+                LL_GPIO_SetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_4_7_IRQn->PWM, 1000.0 / (float)p_HB_SD_4_7_IRQn->off_time_ms, 0);
+                *p_HB_SD_4_7_IRQn->Pin_State = 0;
+            }
+            else
+            {
+                LL_GPIO_ResetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+                HB_Set_Freq(&p_HB_SD_4_7_IRQn->PWM, 1000.0 / (float)p_HB_SD_4_7_IRQn->on_time_ms, 0);
+                *p_HB_SD_4_7_IRQn->Pin_State = 1;
+            }
+
+            break;
+        case H_BRIDGE_MODE_HS_ON:
+            LL_GPIO_SetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+
+            LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            break;
+        case H_BRIDGE_MODE_LS_ON:
+            LL_GPIO_ResetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+
+            LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            break;
+        case H_BRIDGE_MODE_FLOAT:
+            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+            break;
+        
+        default:
+            break;
+        }
+
+        p_HB_SD_4_7_IRQn->is_setted = true;
+    }
+} */

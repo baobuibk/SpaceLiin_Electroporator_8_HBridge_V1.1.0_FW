@@ -59,6 +59,7 @@ void App_Main(void)
 
     CMD_Line_Task_Init();
     H_Bridge_Driver_Init();
+    H_Bridge_Task_Init();
     V_Switch_Driver_Init();
     FSP_Line_Task_Init();
     Current_Sense_Task_Init(LL_ADC_SAMPLINGTIME_15CYCLES);

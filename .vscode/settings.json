@@ -11,6 +11,8 @@
         "stdint.h": "c",
         "stm32f4xx_ll_adc.h": "c",
         "current_sense_task.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "stm32f4xx_ll_gpio.h": "c",
+        "v_switch_driver.h": "c"
     }
 }

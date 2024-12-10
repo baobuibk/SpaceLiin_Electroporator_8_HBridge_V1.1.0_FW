@@ -66,7 +66,7 @@ const char SPLASH[][65] =
 //static void         CMD_send_splash(uart_stdio_typedef* p_uart);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 uart_stdio_typedef  RS232_UART;
-char                g_RS232_UART_TX_buffer[10240];
+char                g_RS232_UART_TX_buffer[256];
 char                g_RS232_UART_RX_buffer[64];
 
 cmd_line_typedef    CMD_line;

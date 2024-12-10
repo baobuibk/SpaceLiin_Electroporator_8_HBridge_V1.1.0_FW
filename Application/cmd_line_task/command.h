@@ -12,6 +12,11 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: Pulse Control Command :::::::: */
+int CMD_SET_SEQUENCE_INDEX(int argc, char *argv[]);
+int CMD_SET_SEQUENCE_DELETE(int argc, char *argv[]);
+int CMD_SET_SEQUENCE_CONFIRM(int argc, char *argv[]);
+int CMD_SET_SEQUENCE_DELAY(int argc, char *argv[]);
+
 int CMD_SET_PULSE_POLE(int argc, char *argv[]);
 int CMD_SET_PULSE_COUNT(int argc, char *argv[]);
 int CMD_SET_PULSE_DELAY(int argc, char *argv[]);

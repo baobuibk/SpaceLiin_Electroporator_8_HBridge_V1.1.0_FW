@@ -17,22 +17,31 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Private Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+static const char * Error_Sequence_Code[5] =
+{
+    "> PULSE_POLE_IS_NOT_SETTED\n",
+    "> PULSE_COUNT_IS_NOT_SETTED\n",
+    "> PULSE_DELAY_IS_NOT_SETTED\n",
+    "> PULSE_HV_IS_NOT_SETTED\n",
+    "> PULSE_LV_IS_NOT_SETTED\n",
+};
+
 static uint8_t CMD_process_state = 0;
+static uint8_t CMD_sequence_index = 0;
+static uint8_t CMD_total_sequence_index = 0;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static void 	double_to_string(double value, char *buffer, uint8_t precision);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-//extern uart_stdio_typedef  RS232_UART;
-//extern uart_stdio_typedef  GPP_UART;
-
-//extern Accel_Gyro_DataTypedef _gyro, _accel;
-//extern PWM_TypeDef H_Bridge_1_PWM;
-//extern PWM_TypeDef H_Bridge_2_PWM;
-
 tCmdLineEntry g_psCmdTable[] =
 {
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Pulse Control Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	{ "SET_SEQUENCE_INDEX",		CMD_SET_SEQUENCE_INDEX, 	" : Set current HB sequence index" },
+	{ "SET_SEQUENCE_DELETE",	CMD_SET_SEQUENCE_DELETE, 	" : Delete a HB sequence index" },
+	{ "SET_SEQUENCE_CONFIRM",	CMD_SET_SEQUENCE_CONFIRM, 	" : Confirm the setting of the current sequence index" },
+	{ "SET_SEQUENCE_DELAY",		CMD_SET_SEQUENCE_DELAY, 	" : Set current HB index delay" },
+
 	{ "SET_PULSE_POLE",			CMD_SET_PULSE_POLE, 		" : Set pole for H Bridge Pole" },
     { "SET_PULSE_COUNT",		CMD_SET_PULSE_COUNT, 		" : Set number of pulse" },
     { "SET_PULSE_DELAY",		CMD_SET_PULSE_DELAY, 		" : Set delay between pulse hv and lv" },
@@ -67,6 +76,189 @@ tCmdLineEntry g_psCmdTable[] =
 };
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: Pulse Control Command :::::::: */
+int CMD_SET_SEQUENCE_INDEX(int argc, char *argv[])
+{
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	int receive_argm;
+
+	receive_argm = atoi(argv[1]);
+
+	if (receive_argm > 10)
+		return CMDLINE_INVALID_ARG;
+	if (receive_argm < 1)
+		return CMDLINE_INVALID_ARG;
+	
+	/* if (receive_argm == 1)
+	{
+		CMD_sequence_index = 0;
+		return CMDLINE_OK;
+	} */
+
+	if ((receive_argm - 1) > CMD_total_sequence_index + 1)
+	{
+		UART_Printf(&RS232_UART, "> ERROR YOUR NEXT SEQUENCE INDEX IS: %d, NOT %d\n", CMD_total_sequence_index + 2, receive_argm);
+
+		UART_Printf(&RS232_UART, "> CURRENT SEQUENCE INDEX: %d\n", CMD_sequence_index + 1);
+		return CMDLINE_OK;
+	}
+
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 7)) == 0)
+	{
+		UART_Printf(&RS232_UART, "> ERROR CURRENT SEQUENCE INDEX: %d IS NOT CONFIRMED\n", CMD_sequence_index + 1);
+
+		UART_Send_String(&RS232_UART, "> EITHER CONFIRM IT OR DELETE IT\n");
+		
+		/* UART_Printf(&RS232_UART, "> CURRENT SEQUENCE INDEX: %d\n", CMD_sequence_index + 1); */
+		//return CMDLINE_OK;
+	}
+	else
+	{
+		UART_Printf(&RS232_UART, "> CURRENT SEQUENCE INDEX: %d\n", CMD_sequence_index + 1);
+	}
+
+	UART_Printf(&RS232_UART, "> POS HV PULSE COUNT: %d; NEG HV PULSE COUNT: %d\n", 
+	HB_sequence_array[CMD_sequence_index].hv_pos_count, HB_sequence_array[CMD_sequence_index].hv_neg_count);
+	UART_Printf(&RS232_UART, "> POS LV PULSE COUNT: %d; NEG LV PULSE COUNT: %d\n", 
+	HB_sequence_array[CMD_sequence_index].lv_pos_count, HB_sequence_array[CMD_sequence_index].lv_neg_count);
+
+	UART_Printf(&RS232_UART, "> DELAY BETWEEN HV POS AND NEG PULSE: %dms\n", HB_sequence_array[CMD_sequence_index].hv_delay_ms);
+	UART_Printf(&RS232_UART, "> DELAY BETWEEN LV POS AND NEG PULSE: %dms\n", HB_sequence_array[CMD_sequence_index].lv_delay_ms);
+	UART_Printf(&RS232_UART, "> DELAY BETWEEN HV PULSE AND LV PULSE: %dms\n", HB_sequence_array[CMD_sequence_index].pulse_delay_ms);
+
+	UART_Printf(&RS232_UART, "HV PULSE ON TIME: %dms; HV PULSE OFF TIME: %dms\n", 
+	HB_sequence_array[CMD_sequence_index].hv_on_ms, HB_sequence_array[CMD_sequence_index].hv_off_ms);
+	UART_Printf(&RS232_UART, "> LV PULSE ON TIME: %dms; LV PULSE OFF TIME: %dms\n",
+	HB_sequence_array[CMD_sequence_index].lv_on_ms, HB_sequence_array[CMD_sequence_index].lv_off_ms);
+
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 7)) == 0)
+	{
+		return CMDLINE_OK;
+	}
+	
+	UART_Printf(&RS232_UART, "> YOUR NEXT SEQUENCE INDEX: %d\n", receive_argm);
+
+	if ((HB_sequence_array[receive_argm - 1].is_setted & (1 << 7)) == 0)
+	{
+		UART_Printf(&RS232_UART, "> SEQUENCE: %d IS EMPTY\n", receive_argm);
+		UART_Printf(&RS232_UART, "> CURRENT SEQUENCE INDEX: %d\n", receive_argm);
+	
+		CMD_sequence_index = receive_argm - 1;
+		CMD_total_sequence_index = CMD_sequence_index;
+		return CMDLINE_OK;
+	}
+
+	UART_Printf(&RS232_UART, "> POS HV PULSE COUNT: %d; NEG HV PULSE COUNT: %d\n", 
+	HB_sequence_array[receive_argm - 1].hv_pos_count, HB_sequence_array[receive_argm - 1].hv_neg_count);
+	UART_Printf(&RS232_UART, "> POS LV PULSE COUNT: %d; NEG LV PULSE COUNT: %d\n", 
+	HB_sequence_array[receive_argm - 1].lv_pos_count, HB_sequence_array[receive_argm - 1].lv_neg_count);
+
+	UART_Printf(&RS232_UART, "> DELAY BETWEEN HV POS AND NEG PULSE: %dms\n", HB_sequence_array[receive_argm - 1].hv_delay_ms);
+	UART_Printf(&RS232_UART, "> DELAY BETWEEN LV POS AND NEG PULSE: %dms\n", HB_sequence_array[receive_argm - 1].lv_delay_ms);
+	UART_Printf(&RS232_UART, "> DELAY BETWEEN HV PULSE AND LV PULSE: %dms\n", HB_sequence_array[receive_argm - 1].pulse_delay_ms);
+
+	UART_Printf(&RS232_UART, "HV PULSE ON TIME: %dms; HV PULSE OFF TIME: %dms\n", 
+	HB_sequence_array[receive_argm - 1].hv_on_ms, HB_sequence_array[receive_argm - 1].hv_off_ms);
+	UART_Printf(&RS232_UART, "> LV PULSE ON TIME: %dms; LV PULSE OFF TIME: %dms\n",
+	HB_sequence_array[receive_argm - 1].lv_on_ms, HB_sequence_array[receive_argm - 1].lv_off_ms);
+
+	UART_Printf(&RS232_UART, "> CURRENT SEQUENCE INDEX: %d\n", receive_argm);
+	
+	CMD_sequence_index = receive_argm - 1;
+	CMD_total_sequence_index = CMD_sequence_index;
+
+	return CMDLINE_OK;
+}
+
+int CMD_SET_SEQUENCE_DELETE(int argc, char *argv[])
+{
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	/* int receive_argm;
+
+	receive_argm = atoi(argv[1]);
+
+	if (receive_argm > 10)
+		return CMDLINE_INVALID_ARG;
+	if (receive_argm < 1)
+		return CMDLINE_INVALID_ARG;
+	
+	if ((receive_argm - 1) > CMD_total_sequence_index + 1)
+	{
+		UART_Printf(&RS232_UART, "> ERROR SEQUENCE INDEX: %d IS OUT-OF-BOUND\n", receive_argm);
+
+		UART_Printf(&RS232_UART, "> TOTAL SEQUENCE INDEX: %d\n", CMD_total_sequence_index + 1);
+		return CMDLINE_OK;
+	} */
+
+	if (CMD_sequence_index < CMD_total_sequence_index)
+	{
+		UART_Send_String(&RS232_UART, "> ERROR CANNOT DELETE IN-BETWEEN SEQUENCE\n");
+		return CMDLINE_OK;
+	}
+	
+	HB_sequence_array[(CMD_sequence_index)].is_setted &= ~(1 << 7);
+	CMD_total_sequence_index -= 1;
+	CMD_sequence_index = CMD_total_sequence_index;
+	UART_Printf(&RS232_UART, "> CURRENT SEQUENCE INDEX: %d\n", CMD_sequence_index + 1);
+
+	return CMDLINE_OK;
+}
+
+int CMD_SET_SEQUENCE_CONFIRM(int argc, char *argv[])
+{
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	int receive_argm;
+
+	receive_argm = atoi(argv[1]);
+
+	if (receive_argm > 1)
+		return CMDLINE_INVALID_ARG;
+	if (receive_argm < 1)
+		return CMDLINE_INVALID_ARG;
+
+	HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 7);
+
+	return CMDLINE_OK;
+}
+
+int CMD_SET_SEQUENCE_DELAY(int argc, char *argv[])
+{
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	int receive_argm;
+
+	receive_argm = atoi(argv[1]);
+
+	if (receive_argm > 100)
+		return CMDLINE_INVALID_ARG;
+	if (receive_argm < 1)
+		return CMDLINE_INVALID_ARG;
+
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 0)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 0);
+		//CMD_total_sequence_index = CMD_sequence_index;
+	}
+	
+	HB_sequence_array[CMD_sequence_index].sequence_delay_ms = receive_argm;
+	
+	return CMDLINE_OK;
+}
+
 int CMD_SET_PULSE_POLE(int argc, char *argv[])
 {
 	if (argc < 3)
@@ -86,8 +278,14 @@ int CMD_SET_PULSE_POLE(int argc, char *argv[])
 	else if ((receive_argm[1] > 8) || (receive_argm[1] < 1) || (receive_argm[1] == 9))
 		return CMDLINE_INVALID_ARG;
 
-	HB_pos_pole_index = receive_argm[0] - 1;
-	HB_neg_pole_index = receive_argm[1] - 1;
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 1)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 1);
+		//CMD_total_sequence_index = CMD_sequence_index;
+	}
+	
+	HB_sequence_array[CMD_sequence_index].pos_pole_index = receive_argm[0] - 1;
+	HB_sequence_array[CMD_sequence_index].neg_pole_index = receive_argm[1] - 1;
 
 	return CMDLINE_OK;
 }
@@ -109,11 +307,17 @@ int CMD_SET_PULSE_COUNT(int argc, char *argv[])
 	if ((receive_argm[0] > 20) || (receive_argm[1] > 20) || (receive_argm[2] > 20) || (receive_argm[3] > 20))
 		return CMDLINE_INVALID_ARG;
 
-	hv_pulse_pos_count 	= receive_argm[0];
-    hv_pulse_neg_count 	= receive_argm[1];
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 2)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 2);
+		//CMD_total_sequence_index = CMD_sequence_index;
+	}
 
-    lv_pulse_pos_count 	= receive_argm[2];
-    lv_pulse_neg_count 	= receive_argm[3];
+	HB_sequence_array[CMD_sequence_index].hv_pos_count 	= receive_argm[0];
+    HB_sequence_array[CMD_sequence_index].hv_neg_count 	= receive_argm[1];
+
+    HB_sequence_array[CMD_sequence_index].lv_pos_count 	= receive_argm[2];
+    HB_sequence_array[CMD_sequence_index].lv_neg_count 	= receive_argm[3];
 
 	return CMDLINE_OK;
 }
@@ -138,10 +342,16 @@ int CMD_SET_PULSE_DELAY(int argc, char *argv[])
 	else if ((receive_argm[2] > 1000) || (receive_argm[2] < 0))
 		return CMDLINE_INVALID_ARG;
 
-	hv_delay_ms = receive_argm[0];
-	lv_delay_ms	= receive_argm[1];
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 3)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 3);
+		//CMD_total_sequence_index = CMD_sequence_index;
+	}
 
-    pulse_delay_ms = receive_argm[2];
+	HB_sequence_array[CMD_sequence_index].hv_delay_ms = receive_argm[0];
+	HB_sequence_array[CMD_sequence_index].lv_delay_ms	= receive_argm[1];
+
+    HB_sequence_array[CMD_sequence_index].pulse_delay_ms = receive_argm[2];
 
 	return CMDLINE_OK;
 }
@@ -163,8 +373,14 @@ int CMD_SET_PULSE_HV(int argc, char *argv[])
 	else if ((receive_argm[1] > 20) || (receive_argm[1] < 1))
 		return CMDLINE_INVALID_ARG;
 
-	hv_on_time_ms   = receive_argm[0];
-	hv_off_time_ms  = receive_argm[1];
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 4)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 4);
+		//CMD_total_sequence_index = CMD_sequence_index;
+	}
+
+	HB_sequence_array[CMD_sequence_index].hv_on_ms   = receive_argm[0];
+	HB_sequence_array[CMD_sequence_index].hv_off_ms  = receive_argm[1];
 
 	return CMDLINE_OK;
 }
@@ -186,8 +402,14 @@ int CMD_SET_PULSE_LV(int argc, char *argv[])
 	else if ((receive_argm[1] > 1000) || (receive_argm[1] < 1))
 		return CMDLINE_INVALID_ARG;
 
-	lv_on_time_ms 	= receive_argm[0];
-    lv_off_time_ms	= receive_argm[1];
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 5)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 5);
+		//CMD_total_sequence_index = CMD_sequence_index;
+	}
+
+	HB_sequence_array[CMD_sequence_index].lv_on_ms 	= receive_argm[0];
+    HB_sequence_array[CMD_sequence_index].lv_off_ms	= receive_argm[1];
 
 	return CMDLINE_OK;
 }
@@ -204,7 +426,16 @@ int CMD_SET_PULSE_CONTROL(int argc, char *argv[])
 	if ((receive_argm > 1) || (receive_argm < 0))
 		return CMDLINE_INVALID_ARG;
 
-	H_Bridge_Set_Pole();
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 7)) == 0)
+	{
+		UART_Printf(&RS232_UART, "> ERROR CURRENT SEQUENCE INDEX: %d IS NOT CONFIRMED\n", CMD_sequence_index + 1);
+
+		UART_Send_String(&RS232_UART, "> EITHER CONFIRM IT OR DELETE IT\n");
+		
+		UART_Send_String(&RS232_UART, "> PULSE CONTROL IS DISABLED\n");
+		return CMDLINE_OK;
+	}
+
 	is_h_bridge_enable = receive_argm;
 	SchedulerTaskEnable(0, 1);
 
@@ -346,7 +577,7 @@ int CMD_MEASURE_IMPEDANCE(int argc, char *argv[])
 	
     is_h_bridge_enable 		= false;
 
-	H_Bridge_Set_Pole();
+	H_Bridge_Set_Pole(3, 8);
     V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
     H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
     H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);

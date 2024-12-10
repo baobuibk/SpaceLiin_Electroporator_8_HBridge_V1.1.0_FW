@@ -15,6 +15,10 @@
 #include "scheduler.h"
 #include "uart.h"
 
+// INCLUDE DRIVER //
+#include "h_bridge_driver.h"
+#include "v_switch_driver.h"
+
 // INCLUDE TASK //
 #include "cmd_line_task.h"
 #include "h_bridge_task.h"
@@ -26,10 +30,6 @@
 #include "impedance_task.h"
 #include "BMP390.h"
 */
-
-// INCLUDE DRIVER //
-#include "h_bridge_driver.h"
-#include "v_switch_driver.h"
 
 
 void App_Main(void);

@@ -101,7 +101,7 @@ case FSP_CMD_SET_PULSE_LV:
 	
 case FSP_CMD_SET_PULSE_CONTROL:
 {
-	H_Bridge_Set_Pole();
+	//H_Bridge_Set_Pole(3, 8);
 	is_h_bridge_enable = ps_FSP_RX->Payload.set_pulse_control.State;
 	SchedulerTaskEnable(0, 1);
 
@@ -121,7 +121,7 @@ case FSP_CMD_MEASURE_IMPEDANCE:
 	
     is_h_bridge_enable 		= false;
 
-	H_Bridge_Set_Pole();
+	H_Bridge_Set_Pole(3, 8);
     V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
     H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
     H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);

@@ -67,8 +67,6 @@ void Current_Sense_Task(void*)
         Current_Sense_Count++;
         current_sense_value = CURRENT_SENSE_VALUE;
 
-        UART_Printf(&RS232_UART, "> INDEX %d: %d mA\n", Current_Sense_Count, current_sense_value);
-
         Current_Sense_Sum += current_sense_value;
         LL_ADC_REG_StartConversionSWStart(ADC_I_SENSE_HANDLE);
     }
