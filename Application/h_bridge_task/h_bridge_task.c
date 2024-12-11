@@ -31,6 +31,30 @@ static uint8_t current_sequence_index = 0;
 static bool H_Bridge_Set_Next_Sequence(void);
 static void fsp_print(uint8_t packet_length);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+H_Bridge_task_typedef  HB_sequence_default =
+{
+	.is_setted = 0,
+
+	.sequence_delay_ms = 1,
+
+	.pos_pole_index = 0,
+	.neg_pole_index = 5,
+
+	.pulse_delay_ms = 15,
+
+	.hv_pos_count = 5,
+	.hv_neg_count = 6,
+	.hv_delay_ms = 5,
+	.hv_on_ms = 5,
+	.hv_off_ms = 15,
+
+	.lv_pos_count = 7,
+	.lv_neg_count = 8,
+	.lv_delay_ms = 10,
+	.lv_on_ms = 50,
+	.lv_off_ms = 90,
+};
+
 H_Bridge_task_typedef  HB_sequence_array[10] = {0};
 
 H_Bridge_task_typedef* ps_HB_current = &HB_sequence_array[0];
@@ -45,7 +69,7 @@ void H_Bridge_Task_Init(void)
     
     for (uint8_t i = 0; i < 10; i++)
     {
-        HB_sequence_array[i].is_setted = false;
+        HB_sequence_array[i] = HB_sequence_default;
     }
 }
 
