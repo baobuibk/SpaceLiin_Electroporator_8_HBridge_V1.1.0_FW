@@ -5,9 +5,10 @@
 #include "h_bridge_driver.h"
 #include "v_switch_driver.h"
 
+#include "crc.h"
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-static bool H_Bridge_Set_Next_Sequence(void);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -27,6 +28,8 @@ static H_Bridge_State_typedef H_Bridge_State = H_BRIDGE_STOP_STATE;
 static uint8_t current_sequence_index = 0;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+static bool H_Bridge_Set_Next_Sequence(void);
+static void fsp_print(uint8_t packet_length);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 H_Bridge_task_typedef  HB_sequence_array[10] = {0};
 
@@ -225,6 +228,11 @@ void H_Bridge_Task(void*)
             if (H_Bridge_Set_Next_Sequence() == false)
             {
                 is_h_bridge_enable = false;
+
+                ps_FSP_TX->CMD = FSP_CMD_SET_PULSE_CONTROL;
+                ps_FSP_TX->Payload.set_pulse_control.State = is_h_bridge_enable;
+
+                fsp_print(2);
             }
             else
             {
@@ -265,18 +273,34 @@ static bool H_Bridge_Set_Next_Sequence(void)
     return 1;
 }
 
+static void fsp_print(uint8_t packet_length)
+{
+    s_FSP_TX_Packet.sod 		= FSP_PKT_SOD;
+    s_FSP_TX_Packet.src_adr 	= fsp_my_adr;
+    s_FSP_TX_Packet.dst_adr 	= FSP_ADR_GPC;
+    s_FSP_TX_Packet.length 	    = packet_length;
+    s_FSP_TX_Packet.type 		= FSP_PKT_TYPE_CMD_W_DATA;
+    s_FSP_TX_Packet.eof 		= FSP_PKT_EOF;
+    s_FSP_TX_Packet.crc16 		= crc16_CCITT(FSP_CRC16_INITIAL_VALUE, &s_FSP_TX_Packet.src_adr, s_FSP_TX_Packet.length + 4);
+
+    uint8_t encoded_frame[20] = { 0 };
+    uint8_t frame_len;
+    fsp_encode(&s_FSP_TX_Packet, encoded_frame, &frame_len);
+
+    UART_FSP(&GPC_UART, (char*)encoded_frame, frame_len);
+}
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-uint16_t    pulse_delay_ms              = 15;
-
-uint8_t     hv_pulse_pos_count          = 5;
-uint8_t     hv_pulse_neg_count          = 6;
-uint8_t     hv_delay_ms                 = 5;
-uint8_t     hv_on_time_ms               = 5;
-uint8_t     hv_off_time_ms              = 15;
-
-uint8_t     lv_pulse_pos_count          = 7;
-uint8_t     lv_pulse_neg_count          = 8;
-uint8_t     lv_delay_ms                 = 10;
-uint16_t    lv_on_time_ms               = 50;
-uint16_t    lv_off_time_ms              = 90;
+//uint16_t    pulse_delay_ms              = 15;
+//
+//uint8_t     hv_pulse_pos_count          = 5;
+//uint8_t     hv_pulse_neg_count          = 6;
+//uint8_t     hv_delay_ms                 = 5;
+//uint8_t     hv_on_time_ms               = 5;
+//uint8_t     hv_off_time_ms              = 15;
+//
+//uint8_t     lv_pulse_pos_count          = 7;
+//uint8_t     lv_pulse_neg_count          = 8;
+//uint8_t     lv_delay_ms                 = 10;
+//uint16_t    lv_on_time_ms               = 50;
+//uint16_t    lv_off_time_ms              = 90;

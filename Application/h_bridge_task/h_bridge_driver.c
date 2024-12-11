@@ -54,8 +54,8 @@ bool HB_pin_state_array[8] =
     0,
 };
 
-uint8_t HB_pos_pole_index = 1;
-uint8_t HB_neg_pole_index = 6;
+//uint8_t HB_pos_pole_index = 1;
+//uint8_t HB_neg_pole_index = 6;
 
 H_Bridge_typdef HB_pos_pole =
 {
@@ -258,7 +258,7 @@ void H_Bridge_Kill(void)
 }
 
 /* ::::H_Bridge SD Interupt Handle:::: */
-/* void H_Bridge_SD_Interupt_Handle(H_Bridge_typdef* p_HB_SD_IRQn)
+void H_Bridge_SD_Interupt_Handle(H_Bridge_typdef* p_HB_SD_IRQn)
 {
     if(LL_TIM_IsActiveFlag_UPDATE(p_HB_SD_IRQn->PWM.TIMx) == true)
     {
@@ -315,7 +315,7 @@ void H_Bridge_Kill(void)
 
         p_HB_SD_IRQn->is_setted = true;
     }
-} */
+}
 
 /* ::::H_Bridge SD0_3 Interupt Handle:::: */
 void H_Bridge_SD0_3_Interupt_Handle()
@@ -334,7 +334,7 @@ void H_Bridge_SD0_3_Interupt_Handle()
                 LL_TIM_DisableCounter(H_BRIDGE_SD0_3_HANDLE);
                 return;
             }
-            
+
             if (*p_HB_SD_0_3_IRQn->Pin_State == 1)
             {
                 LL_GPIO_SetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
@@ -368,7 +368,7 @@ void H_Bridge_SD0_3_Interupt_Handle()
         case H_BRIDGE_MODE_FLOAT:
             LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
             break;
-        
+
         default:
             break;
         }
@@ -428,7 +428,7 @@ void H_Bridge_SD4_7_Interupt_Handle()
         case H_BRIDGE_MODE_FLOAT:
             LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
             break;
-        
+
         default:
             break;
         }

@@ -27,8 +27,9 @@ static const char * Error_Sequence_Code[5] =
 };
 
 static uint8_t CMD_process_state = 0;
-static uint8_t CMD_sequence_index = 0;
-static uint8_t CMD_total_sequence_index = 0;
+
+static uint8_t ChannelMapping[8] = {2, 4, 7, 6, 5, 3, 0, 1};
+static uint8_t User_Channel_Mapping[8] = {7, 8, 1, 6, 2, 5, 4, 3};
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static void 	double_to_string(double value, char *buffer, uint8_t precision);
@@ -78,6 +79,10 @@ tCmdLineEntry g_psCmdTable[] =
     { "MARCO",                  CMD_LINE_TEST,              "TEST" },
 	{0,0,0}
 };
+
+uint8_t CMD_sequence_index = 0;
+uint8_t CMD_total_sequence_index = 0;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: Pulse Control Command :::::::: */
 int CMD_SET_SEQUENCE_INDEX(int argc, char *argv[])
@@ -270,11 +275,10 @@ int CMD_SET_PULSE_POLE(int argc, char *argv[])
 	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 1)) == false)
 	{
 		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 1);
-		//CMD_total_sequence_index = CMD_sequence_index;
 	}
 	
-	HB_sequence_array[CMD_sequence_index].pos_pole_index = receive_argm[0] - 1;
-	HB_sequence_array[CMD_sequence_index].neg_pole_index = receive_argm[1] - 1;
+	HB_sequence_array[CMD_sequence_index].pos_pole_index = ChannelMapping[receive_argm[0] - 1];
+	HB_sequence_array[CMD_sequence_index].neg_pole_index = ChannelMapping[receive_argm[1] - 1];
 
 	return CMDLINE_OK;
 }
@@ -299,7 +303,6 @@ int CMD_SET_PULSE_COUNT(int argc, char *argv[])
 	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 2)) == false)
 	{
 		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 2);
-		//CMD_total_sequence_index = CMD_sequence_index;
 	}
 
 	HB_sequence_array[CMD_sequence_index].hv_pos_count 	= receive_argm[0];
@@ -334,7 +337,6 @@ int CMD_SET_PULSE_DELAY(int argc, char *argv[])
 	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 3)) == false)
 	{
 		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 3);
-		//CMD_total_sequence_index = CMD_sequence_index;
 	}
 
 	HB_sequence_array[CMD_sequence_index].hv_delay_ms = receive_argm[0];
@@ -365,7 +367,6 @@ int CMD_SET_PULSE_HV(int argc, char *argv[])
 	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 4)) == false)
 	{
 		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 4);
-		//CMD_total_sequence_index = CMD_sequence_index;
 	}
 
 	HB_sequence_array[CMD_sequence_index].hv_on_ms   = receive_argm[0];
@@ -394,7 +395,6 @@ int CMD_SET_PULSE_LV(int argc, char *argv[])
 	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 5)) == false)
 	{
 		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 5);
-		//CMD_total_sequence_index = CMD_sequence_index;
 	}
 
 	HB_sequence_array[CMD_sequence_index].lv_on_ms 	= receive_argm[0];
@@ -460,6 +460,11 @@ int CMD_GET_SEQUENCE_ALL(int argc, char *argv[])
 	for (uint8_t i = 0; i <= CMD_total_sequence_index; i++)
 	{
 		UART_Printf(&RS232_UART, "> CURRENT SEQUENCE INDEX: %d\n", i + 1);
+
+		UART_Send_String(&RS232_UART, "> \n");
+
+		UART_Printf(&RS232_UART, "> PULSE POS POLE: %d; PULSE NEG POLE: %d\n",
+		User_Channel_Mapping[HB_sequence_array[i].pos_pole_index], User_Channel_Mapping[HB_sequence_array[i].neg_pole_index]);
 
 		UART_Send_String(&RS232_UART, "> \n");
 
@@ -591,6 +596,11 @@ int CMD_GET_PULSE_ALL(int argc, char *argv[])
 		return CMDLINE_TOO_FEW_ARGS;
 	else if (argc > 1)
 		return CMDLINE_TOO_MANY_ARGS;
+
+	UART_Send_String(&RS232_UART, "> \n");
+
+	UART_Printf(&RS232_UART, "> PULSE POS POLE: %d; PULSE NEG POLE: %d\n",
+	User_Channel_Mapping[HB_sequence_array[CMD_sequence_index].pos_pole_index], User_Channel_Mapping[HB_sequence_array[CMD_sequence_index].neg_pole_index]);
 
 	UART_Send_String(&RS232_UART, "> \n");
 

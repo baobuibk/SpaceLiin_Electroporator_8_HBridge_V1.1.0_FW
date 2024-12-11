@@ -221,6 +221,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
   H_Bridge_SD0_3_Interupt_Handle();
+//	H_Bridge_SD_Interupt_Handle(p_HB_SD_0_3_IRQn);
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
 
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
@@ -276,6 +277,7 @@ void TIM8_UP_TIM13_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM8_UP_TIM13_IRQn 0 */
   H_Bridge_SD4_7_Interupt_Handle();
+//  H_Bridge_SD_Interupt_Handle(p_HB_SD_4_7_IRQn);
   /* USER CODE END TIM8_UP_TIM13_IRQn 0 */
 
   /* USER CODE BEGIN TIM8_UP_TIM13_IRQn 1 */

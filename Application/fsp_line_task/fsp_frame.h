@@ -6,6 +6,11 @@
 typedef enum _FSP_CMD_typedef_
 {
 	/* :::::::::: Pulse Control Command :::::::: */
+	FSP_CMD_SET_SEQUENCE_INDEX,
+	FSP_CMD_SET_SEQUENCE_CONFIRM,
+	FSP_CMD_SET_SEQUENCE_DELETE,
+	FSP_CMD_SET_SEQUENCE_DELAY,
+
 	FSP_CMD_SET_PULSE_POLE,
 	FSP_CMD_SET_PULSE_COUNT,
 	FSP_CMD_SET_PULSE_DELAY,
@@ -27,6 +32,17 @@ typedef enum _FSP_CMD_typedef_
 } FSP_CMD_typedef;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Pulse Control Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+typedef struct _FSP_SET_SEQUENCE_INDEX_
+{
+	uint8_t 	index;			/* hv pulse count */
+} FSP_SET_SEQUENCE_INDEX;
+
+typedef struct _FSP_SET_SEQUENCE_DELAY_
+{
+	uint8_t 	Delay_high;
+	uint8_t		Delay_low;
+} FSP_SET_SEQUENCE_DELAY;
+
 typedef struct _FSP_SET_PULSE_POLE_FRAME_
 {
 	uint8_t 	pos_pole;		/* hv pulse count */
@@ -121,6 +137,9 @@ typedef struct _FSP_HANDSAKE_
 typedef union _FSP_Payload_Frame_typedef_
 {
 	/* :::::::::: Pulse Control Command :::::::: */
+	FSP_SET_SEQUENCE_INDEX					set_sequence_index;
+	FSP_SET_SEQUENCE_DELAY					set_sequence_delay;
+
 	FSP_SET_PULSE_POLE_FRAME				set_pulse_pole;
 	FSP_SET_PULSE_COUNT_FRAME				set_pulse_count;
 	FSP_SET_PULSE_DELAY_FRAME				set_pulse_delay;

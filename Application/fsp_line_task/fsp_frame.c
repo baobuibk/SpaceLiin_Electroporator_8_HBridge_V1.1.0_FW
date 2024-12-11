@@ -23,6 +23,9 @@ static void fsp_print(uint8_t packet_length);
 //static void convertIntegerToBytes(int number, uint8_t arr[]);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+extern uint8_t CMD_sequence_index;
+extern uint8_t CMD_total_sequence_index;
+
 /*
 extern double   compensated_pressure;
 extern double   compensated_temperature;
@@ -39,11 +42,62 @@ switch (ps_FSP_RX->CMD)
 {
 
 /* :::::::::: Pulse Control Command :::::::: */
+case FSP_CMD_SET_SEQUENCE_INDEX:
+{
+	CMD_sequence_index 	= ps_FSP_RX->Payload.set_sequence_index.index - 1;
+
+	if (CMD_total_sequence_index < CMD_sequence_index)
+	{
+		CMD_total_sequence_index = CMD_sequence_index;
+	}
+
+	UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_SEQUENCE_INDEX\r\n> ");
+	break;
+}
+
+case FSP_CMD_SET_SEQUENCE_DELETE:
+{
+	HB_sequence_array[(CMD_sequence_index)].is_setted &= ~(1 << 7);
+	CMD_total_sequence_index -= 1;
+	CMD_sequence_index = CMD_total_sequence_index;
+
+	UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_SEQUENCE_DELETE\r\n> ");
+	break;
+}
+
+case FSP_CMD_SET_SEQUENCE_CONFIRM:
+{
+	HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 7);
+
+	UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_SEQUENCE_CONFIRM\r\n> ");
+	break;
+}
+
+case FSP_CMD_SET_SEQUENCE_DELAY:
+{
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 0)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 0);
+	}
+
+	HB_sequence_array[CMD_sequence_index].sequence_delay_ms = ps_FSP_RX->Payload.set_sequence_delay.Delay_high;
+	HB_sequence_array[CMD_sequence_index].sequence_delay_ms <<= 8;
+	HB_sequence_array[CMD_sequence_index].sequence_delay_ms |= ps_FSP_RX->Payload.set_sequence_delay.Delay_low;
+
+	UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_SEQUENCE_DELAY\r\n> ");
+	break;
+}
+
 case FSP_CMD_SET_PULSE_POLE:
 {
-	HB_pos_pole_index 	= ps_FSP_RX->Payload.set_pulse_pole.pos_pole - 1;
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 1)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 1);
+	}
 
-	HB_neg_pole_index 	= ps_FSP_RX->Payload.set_pulse_pole.neg_pole - 1;
+	HB_sequence_array[CMD_sequence_index].pos_pole_index 	= ps_FSP_RX->Payload.set_pulse_pole.pos_pole;
+
+	HB_sequence_array[CMD_sequence_index].neg_pole_index 	= ps_FSP_RX->Payload.set_pulse_pole.neg_pole;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_POLE\r\n> ");
 	break;
@@ -51,11 +105,16 @@ case FSP_CMD_SET_PULSE_POLE:
 
 case FSP_CMD_SET_PULSE_COUNT:
 {
-	hv_pulse_pos_count 	= ps_FSP_RX->Payload.set_pulse_count.HV_pos_count;
-	hv_pulse_neg_count 	= ps_FSP_RX->Payload.set_pulse_count.HV_neg_count;
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 2)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 2);
+	}
 
-	lv_pulse_pos_count 	= ps_FSP_RX->Payload.set_pulse_count.LV_pos_count;
-	lv_pulse_neg_count 	= ps_FSP_RX->Payload.set_pulse_count.LV_neg_count;
+	HB_sequence_array[CMD_sequence_index].hv_pos_count 	= ps_FSP_RX->Payload.set_pulse_count.HV_pos_count;
+	HB_sequence_array[CMD_sequence_index].hv_neg_count 	= ps_FSP_RX->Payload.set_pulse_count.HV_neg_count;
+
+	HB_sequence_array[CMD_sequence_index].lv_pos_count 	= ps_FSP_RX->Payload.set_pulse_count.LV_pos_count;
+	HB_sequence_array[CMD_sequence_index].lv_neg_count 	= ps_FSP_RX->Payload.set_pulse_count.LV_neg_count;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_COUNT\r\n> ");
 	break;
@@ -64,12 +123,17 @@ case FSP_CMD_SET_PULSE_COUNT:
 
 case FSP_CMD_SET_PULSE_DELAY:
 {
-	hv_delay_ms = ps_FSP_RX->Payload.set_pulse_delay.HV_delay;
-	lv_delay_ms	= ps_FSP_RX->Payload.set_pulse_delay.LV_delay;
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 3)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 3);
+	}
 
-	pulse_delay_ms = ps_FSP_RX->Payload.set_pulse_delay.Delay_high;
-	pulse_delay_ms <<= 8;
-	pulse_delay_ms |= ps_FSP_RX->Payload.set_pulse_delay.Delay_low;
+	HB_sequence_array[CMD_sequence_index].hv_delay_ms = ps_FSP_RX->Payload.set_pulse_delay.HV_delay;
+	HB_sequence_array[CMD_sequence_index].lv_delay_ms	= ps_FSP_RX->Payload.set_pulse_delay.LV_delay;
+
+	HB_sequence_array[CMD_sequence_index].pulse_delay_ms = ps_FSP_RX->Payload.set_pulse_delay.Delay_high;
+	HB_sequence_array[CMD_sequence_index].pulse_delay_ms <<= 8;
+	HB_sequence_array[CMD_sequence_index].pulse_delay_ms |= ps_FSP_RX->Payload.set_pulse_delay.Delay_low;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_DELAY\r\n> ");
 	break;
@@ -78,8 +142,13 @@ case FSP_CMD_SET_PULSE_DELAY:
 
 case FSP_CMD_SET_PULSE_HV:
 {
-	hv_on_time_ms 	= ps_FSP_RX->Payload.set_pulse_HV.OnTime;
-	hv_off_time_ms 	= ps_FSP_RX->Payload.set_pulse_HV.OffTime;
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 4)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 4);
+	}
+
+	HB_sequence_array[CMD_sequence_index].hv_on_ms 	= ps_FSP_RX->Payload.set_pulse_HV.OnTime;
+	HB_sequence_array[CMD_sequence_index].hv_off_ms 	= ps_FSP_RX->Payload.set_pulse_HV.OffTime;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_HV\r\n> ");
 	break;
@@ -87,13 +156,18 @@ case FSP_CMD_SET_PULSE_HV:
 	
 case FSP_CMD_SET_PULSE_LV:
 {
-	lv_on_time_ms 	= ps_FSP_RX->Payload.set_pulse_LV.OnTime_high;
-	lv_on_time_ms   <<= 8;
-	lv_on_time_ms	|= ps_FSP_RX->Payload.set_pulse_LV.OnTime_low;
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 5)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 5);
+	}
 
-	lv_off_time_ms	= ps_FSP_RX->Payload.set_pulse_LV.OffTime_high;
-	lv_off_time_ms	<<= 8;
-	lv_off_time_ms	|= ps_FSP_RX->Payload.set_pulse_LV.OffTime_low;
+	HB_sequence_array[CMD_sequence_index].lv_on_ms 	= ps_FSP_RX->Payload.set_pulse_LV.OnTime_high;
+	HB_sequence_array[CMD_sequence_index].lv_on_ms   <<= 8;
+	HB_sequence_array[CMD_sequence_index].lv_on_ms	|= ps_FSP_RX->Payload.set_pulse_LV.OnTime_low;
+
+	HB_sequence_array[CMD_sequence_index].lv_off_ms	= ps_FSP_RX->Payload.set_pulse_LV.OffTime_high;
+	HB_sequence_array[CMD_sequence_index].lv_off_ms	<<= 8;
+	HB_sequence_array[CMD_sequence_index].lv_off_ms	|= ps_FSP_RX->Payload.set_pulse_LV.OffTime_low;
 
 	UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_LV\r\n> ");
 	break;

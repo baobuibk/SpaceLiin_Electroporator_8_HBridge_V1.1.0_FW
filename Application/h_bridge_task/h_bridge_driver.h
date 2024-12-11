@@ -40,8 +40,8 @@ extern H_Bridge_typdef* p_HB_SD_4_7_IRQn;
 extern H_Bridge_typdef HB_pos_pole;
 extern H_Bridge_typdef HB_neg_pole;
 
-extern uint8_t HB_pos_pole_index;
-extern uint8_t HB_neg_pole_index;
+//extern uint8_t HB_pos_pole_index;
+//extern uint8_t HB_neg_pole_index;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -57,7 +57,7 @@ void H_Bridge_Set_Pulse_Timing(H_Bridge_typdef* H_Bridge_x, uint16_t Set_delay_t
 
 void H_Bridge_Kill(void);
 
-//void H_Bridge_SD_Interupt_Handle(H_Bridge_typdef* p_HB_SD_IRQn);
+void H_Bridge_SD_Interupt_Handle(H_Bridge_typdef* p_HB_SD_IRQn);
 void H_Bridge_SD0_3_Interupt_Handle();
 void H_Bridge_SD4_7_Interupt_Handle();
 
