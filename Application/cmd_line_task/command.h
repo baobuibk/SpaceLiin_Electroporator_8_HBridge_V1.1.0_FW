@@ -24,6 +24,10 @@ int CMD_SET_PULSE_HV(int argc, char *argv[]);
 int CMD_SET_PULSE_LV(int argc, char *argv[]);
 int CMD_SET_PULSE_CONTROL(int argc, char *argv[]);
 
+int CMD_GET_SEQUENCE_INDEX(int argc, char *argv[]);
+int CMD_GET_SEQUENCE_DELAY(int argc, char *argv[]);
+int CMD_GET_SEQUENCE_ALL(int argc, char *argv[]);
+
 int CMD_GET_PULSE_POLE(int argc, char *argv[]);
 int CMD_GET_PULSE_COUNT(int argc, char *argv[]);
 int CMD_GET_PULSE_DELAY(int argc, char *argv[]);
