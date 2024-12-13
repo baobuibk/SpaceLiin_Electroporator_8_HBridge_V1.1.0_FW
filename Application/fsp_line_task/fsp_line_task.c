@@ -43,6 +43,8 @@ FSP_Payload 		*ps_FSP_RX = (FSP_Payload*) (&s_FSP_RX_Packet.payload);
 fsp_line_typedef 	FSP_line;
 char 				g_FSP_line_buffer[FSP_BUF_LEN];
 
+uint8_t				g_FSP_line_return = 1;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: FSP Line Task Init :::::::: */
 void FSP_Line_Task_Init()
@@ -69,6 +71,11 @@ void FSP_Line_Task(void*)
 
 	for (time_out = 50; (!RX_BUFFER_EMPTY(&GPC_UART)) && (time_out != 0); time_out--)
 	{
+		if (g_FSP_line_return == 0)
+		{
+			break;
+		}
+		
 		FSP_line.RX_char = UART_Get_Char(&GPC_UART);
 
 		if (FSP_line.RX_char == FSP_PKT_SOD)
@@ -82,7 +89,14 @@ void FSP_Line_Task(void*)
 			UART_Printf(&RS232_UART, "%s> ", ErrorCode[FSP_return]);
 
 			if (FSP_return == FSP_PKT_READY)
-				FSP_Line_Process();
+			{
+				g_FSP_line_return = FSP_Line_Process();
+			}
+
+			if (g_FSP_line_return == 0)
+			{
+				return;
+			}
 			
 			FSP_line.write_index = 0;
 		} 
@@ -96,6 +110,18 @@ void FSP_Line_Task(void*)
 
 		}
 	}
+
+	if (g_FSP_line_return == 0)
+    {
+        g_FSP_line_return = FSP_Line_Process();
+
+        if (g_FSP_line_return == 0)
+        {
+            return;
+        }
+
+        FSP_line.write_index = 0;
+    }
 }
 
 /* :::::::::: IRQ Handler ::::::::::::: */
