@@ -3,7 +3,7 @@
 
 static void Status_Led(void*);
 
-#define         SCHEDULER_TASK_COUNT  6
+#define         SCHEDULER_TASK_COUNT  7
 uint32_t 	g_ui32SchedulerNumTasks = SCHEDULER_TASK_COUNT;
 tSchedulerTask 	g_psSchedulerTable[SCHEDULER_TASK_COUNT] =
                 {
@@ -49,6 +49,20 @@ tSchedulerTask 	g_psSchedulerTable[SCHEDULER_TASK_COUNT] =
                             0,                          //count from start
                             true                        //is active
                     },
+                    {
+                            &Accel_Pulsing_Task,
+                            (void *) 0,
+                            10,                      	//call every 1ms
+                            0,                          //count from start
+                            false                        //is active
+                    },
+//                    {
+//                            &Logging_Task,
+//                            (void *) 0,
+//                            1000,                      	//call every 1ms
+//                            0,                          //count from start
+//                            false                        //is active
+//                    },
                 };
 
 void App_Main(void)

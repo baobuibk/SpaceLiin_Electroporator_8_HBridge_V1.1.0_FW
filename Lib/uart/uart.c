@@ -226,402 +226,592 @@ uint16_t UART_Write(uart_stdio_typedef* p_uart, const char *pcBuf, uint16_t ui16
 //! \return None.
 //
 //*****************************************************************************
-void UART_Printf(uart_stdio_typedef* p_uart, const char *pc_string, ...)
-{
-    uint16_t ui16Idx, ui16Value, ui16Pos, ui16Count, ui16Base, ui16Neg;
-    char *pcStr, pcBuf[16], cFill;
-
-    //
-    // Check the arguments.
-    //
-
+void UART_Printf(uart_stdio_typedef* p_uart, const char *pc_string, ...) {
+    char pcBuf[32]; // Buffer dùng chung cho các kiểu định dạng
     va_list vaArgP;
 
     va_start(vaArgP, pc_string);
 
-    //
-    // Loop while there are more characters in the string.
-    //
-    while(*pc_string)
-    {
-        //
-        // Find the first non-% character, or the end of the string.
-        //
-        for(ui16Idx = 0;
-            (pc_string[ui16Idx] != '%') && (pc_string[ui16Idx] != '\0');
-            ui16Idx++)
-        {
-        }
+    while (*pc_string) {
+        if (*pc_string == '%') {
+            pc_string++; // Bỏ qua '%'
 
-        //
-        // Write this portion of the string.
-        //
-        UART_Write(p_uart, pc_string, ui16Idx);
+            // Đọc padding và độ rộng
+            char cFill = ' ';
+            int width = 0, precision = -1;
 
-        //
-        // Skip the portion of the string that was written.
-        //
-        pc_string += ui16Idx;
+            if (*pc_string == '0') { // Padding bằng '0'
+                cFill = '0';
+                pc_string++;
+            }
 
-        //
-        // See if the next character is a %.
-        //
-        if(*pc_string == '%')
-        {
-            //
-            // Skip the %.
-            //
-            pc_string++;
+            // Đọc chiều rộng tối thiểu
+            while (*pc_string >= '0' && *pc_string <= '9') {
+                width = width * 10 + (*pc_string - '0');
+                pc_string++;
+            }
 
-            //
-            // Set the digit count to zero, and the fill character to space
-            // (in other words, to the defaults).
-            //
-            ui16Count = 0;
-            cFill = ' ';
-
-            //
-            // It may be necessary to get back here to process more characters.
-            // Goto's aren't pretty, but effective.  I feel extremely dirty for
-            // using not one but two of the beasts.
-            //
-again:
-
-            //
-            // Determine how to handle the next character.
-            //
-            switch(*pc_string++)
-            {
-                //
-                // Handle the digit characters.
-                //
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                {
-                    //
-                    // If this is a zero, and it is the first digit, then the
-                    // fill character is a zero instead of a space.
-                    //
-                    if((pc_string[-1] == '0') && (ui16Count == 0))
-                    {
-                        cFill = '0';
-                    }
-
-                    //
-                    // Update the digit count.
-                    //
-                    ui16Count *= 10;
-                    ui16Count += pc_string[-1] - '0';
-
-                    //
-                    // Get the next character.
-                    //
-                    goto again;
+            // Đọc độ chính xác nếu có '.'
+            if (*pc_string == '.') {
+                pc_string++;
+                precision = 0;
+                while (*pc_string >= '0' && *pc_string <= '9') {
+                    precision = precision * 10 + (*pc_string - '0');
+                    pc_string++;
                 }
+            }
 
-                //
-                // Handle the %c command.
-                //
-                case 'c':
-                {
-                    //
-                    // Get the value from the varargs.
-                    //
-                    ui16Value = va_arg(vaArgP, int);
-
-                    //
-                    // Print out the character.
-                    //
-                    UART_Write(p_uart, (char *)&ui16Value, 1);
-
-                    //
-                    // This command has been handled.
-                    //
+            // Xử lý từng định dạng
+            char cFormat = *pc_string++;
+            switch (cFormat) {
+                case 'c': { // Ký tự
+                    char value = (char)va_arg(vaArgP, int);
+                    UART_Write(p_uart, &value, 1);
                     break;
                 }
 
-                //
-                // Handle the %d and %i commands.
-                //
+                case 's': { // Chuỗi
+                    char *str = va_arg(vaArgP, char *);
+                    int len = 0;
+                    while (str[len] != '\0') len++; // Tính độ dài chuỗi
+                    if (width > len) {
+                        for (int i = 0; i < (width - len); i++) UART_Write(p_uart, &cFill, 1);
+                    }
+                    UART_Write(p_uart, str, len);
+                    break;
+                }
+
                 case 'd':
-                case 'i':
-                {
-                    //
-                    // Get the value from the varargs.
-                    //
-                    ui16Value = va_arg(vaArgP, int);
+                case 'i': { // Số nguyên có dấu
+                    int value = va_arg(vaArgP, int);
+                    int idx = 0, isNegative = (value < 0);
+                    if (isNegative) value = -value;
 
-                    //
-                    // Reset the buffer position.
-                    //
-                    ui16Pos = 0;
+                    // Chuyển số thành chuỗi
+                    do {
+                        pcBuf[idx++] = '0' + (value % 10);
+                        value /= 10;
+                    } while (value > 0);
 
-                    //
-                    // If the value is negative, make it positive and indicate
-                    // that a minus sign is needed.
-                    //
-                    if((int16_t)ui16Value < 0)
-                    {
-                        //
-                        // Make the value positive.
-                        //
-                        ui16Value = -(int16_t)ui16Value;
+                    if (isNegative) pcBuf[idx++] = '-';
 
-                        //
-                        // Indicate that the value is negative.
-                        //
-                        ui16Neg = 1;
+                    // Padding
+                    while (idx < width) pcBuf[idx++] = cFill;
+
+                    // Đảo ngược chuỗi
+                    for (int i = 0; i < idx / 2; i++) {
+                        char temp = pcBuf[i];
+                        pcBuf[i] = pcBuf[idx - i - 1];
+                        pcBuf[idx - i - 1] = temp;
                     }
-                    else
-                    {
-                        //
-                        // Indicate that the value is positive so that a minus
-                        // sign isn't inserted.
-                        //
-                        ui16Neg = 0;
-                    }
-
-                    //
-                    // Set the base to 10.
-                    //
-                    ui16Base = 10;
-
-                    //
-                    // Convert the value to ASCII.
-                    //
-                    goto convert;
-                }
-
-                //
-                // Handle the %s command.
-                //
-                case 's':
-                {
-                    //
-                    // Get the string pointer from the varargs.
-                    //
-                    pcStr = va_arg(vaArgP, char *);
-
-                    //
-                    // Determine the length of the string.
-                    //
-                    for(ui16Idx = 0; pcStr[ui16Idx] != '\0'; ui16Idx++)
-                    {
-                    }
-
-                    //
-                    // Write the string.
-                    //
-                    UART_Write(p_uart, pcStr, ui16Idx);
-
-                    //
-                    // Write any required padding spaces
-                    //
-                    if(ui16Count > ui16Idx)
-                    {
-                        ui16Count -= ui16Idx;
-                        while(ui16Count--)
-                        {
-                            UART_Write(p_uart, " ", 1);
-                        }
-                    }
-
-                    //
-                    // This command has been handled.
-                    //
+                    UART_Write(p_uart, pcBuf, idx);
                     break;
                 }
 
-                //
-                // Handle the %u command.
-                //
-                case 'u':
-                {
-                    //
-                    // Get the value from the varargs.
-                    //
-                    ui16Value = va_arg(vaArgP, int);
+                case 'u': { // Số nguyên không dấu
+                    unsigned int value = va_arg(vaArgP, unsigned int);
+                    int idx = 0;
 
-                    //
-                    // Reset the buffer position.
-                    //
-                    ui16Pos = 0;
+                    do {
+                        pcBuf[idx++] = '0' + (value % 10);
+                        value /= 10;
+                    } while (value > 0);
 
-                    //
-                    // Set the base to 10.
-                    //
-                    ui16Base = 10;
+                    // Padding
+                    while (idx < width) pcBuf[idx++] = cFill;
 
-                    //
-                    // Indicate that the value is positive so that a minus sign
-                    // isn't inserted.
-                    //
-                    ui16Neg = 0;
-
-                    //
-                    // Convert the value to ASCII.
-                    //
-                    goto convert;
+                    // Đảo ngược chuỗi
+                    for (int i = 0; i < idx / 2; i++) {
+                        char temp = pcBuf[i];
+                        pcBuf[i] = pcBuf[idx - i - 1];
+                        pcBuf[idx - i - 1] = temp;
+                    }
+                    UART_Write(p_uart, pcBuf, idx);
+                    break;
                 }
 
-                //
-                // Handle the %x and %X commands.  Note that they are treated
-                // identically; in other words, %X will use lower case letters
-                // for a-f instead of the upper case letters it should use.  We
-                // also alias %p to %x.
-                //
                 case 'x':
-                case 'X':
-                case 'p':
-                {
-                    //
-                    // Get the value from the varargs.
-                    //
-                    ui16Value = va_arg(vaArgP, int);
+                case 'X': { // Số hex
+                    unsigned int value = va_arg(vaArgP, unsigned int);
+                    int idx = 0;
 
-                    //
-                    // Reset the buffer position.
-                    //
-                    ui16Pos = 0;
+                    do {
+                        int digit = value % 16;
+                        pcBuf[idx++] = (digit < 10) ? ('0' + digit) : ('a' + digit - 10);
+                        value /= 16;
+                    } while (value > 0);
 
-                    //
-                    // Set the base to 16.
-                    //
-                    ui16Base = 16;
+                    // Padding
+                    while (idx < width) pcBuf[idx++] = cFill;
 
-                    //
-                    // Indicate that the value is positive so that a minus sign
-                    // isn't inserted.
-                    //
-                    ui16Neg = 0;
-
-                    //
-                    // Determine the number of digits in the string version of
-                    // the value.
-                    //
-convert:
-                    for(ui16Idx = 1;
-                        (((ui16Idx * ui16Base) <= ui16Value) &&
-                         (((ui16Idx * ui16Base) / ui16Base) == ui16Idx));
-                        ui16Idx *= ui16Base, ui16Count--)
-                    {
+                    // Đảo ngược chuỗi
+                    for (int i = 0; i < idx / 2; i++) {
+                        char temp = pcBuf[i];
+                        pcBuf[i] = pcBuf[idx - i - 1];
+                        pcBuf[idx - i - 1] = temp;
                     }
-
-                    //
-                    // If the value is negative, reduce the count of padding
-                    // characters needed.
-                    //
-                    if(ui16Neg)
-                    {
-                        ui16Count--;
-                    }
-
-                    //
-                    // If the value is negative and the value is padded with
-                    // zeros, then place the minus sign before the padding.
-                    //
-                    if(ui16Neg && (cFill == '0'))
-                    {
-                        //
-                        // Place the minus sign in the output buffer.
-                        //
-                        pcBuf[ui16Pos++] = '-';
-
-                        //
-                        // The minus sign has been placed, so turn off the
-                        // negative flag.
-                        //
-                        ui16Neg = 0;
-                    }
-
-                    //
-                    // Provide additional padding at the beginning of the
-                    // string conversion if needed.
-                    //
-                    if((ui16Count > 1) && (ui16Count < 16))
-                    {
-                        for(ui16Count--; ui16Count; ui16Count--)
-                        {
-                            pcBuf[ui16Pos++] = cFill;
-                        }
-                    }
-
-                    //
-                    // If the value is negative, then place the minus sign
-                    // before the number.
-                    //
-                    if(ui16Neg)
-                    {
-                        //
-                        // Place the minus sign in the output buffer.
-                        //
-                        pcBuf[ui16Pos++] = '-';
-                    }
-
-                    //
-                    // Convert the value into a string.
-                    //
-                    for(; ui16Idx; ui16Idx /= ui16Base)
-                    {
-                        pcBuf[ui16Pos++] =
-                            HEX_reference[(ui16Value / ui16Idx) % ui16Base];
-                    }
-
-                    //
-                    // Write the string.
-                    //
-                    UART_Write(p_uart, pcBuf, ui16Pos);
-
-                    //
-                    // This command has been handled.
-                    //
+                    UART_Write(p_uart, pcBuf, idx);
                     break;
                 }
 
-                //
-                // Handle the %% command.
-                //
-                case '%':
-                {
-                    //
-                    // Simply write a single %.
-                    //
-                    UART_Write(p_uart, pc_string - 1, 1);
+                case 'f': { // Số thực
+                    double value = va_arg(vaArgP, double);
+                    int idx = 0, isNegative = (value < 0);
+                    if (isNegative) value = -value;
 
-                    //
-                    // This command has been handled.
-                    //
+                    int integerPart = (int)value;
+                    double fractionalPart = value - integerPart;
+
+                    // Chuyển phần nguyên thành chuỗi
+                    do {
+                        pcBuf[idx++] = '0' + (integerPart % 10);
+                        integerPart /= 10;
+                    } while (integerPart > 0);
+
+                    if (isNegative) pcBuf[idx++] = '-';
+
+                    // Đảo ngược phần nguyên
+                    for (int i = 0; i < idx / 2; i++) {
+                        char temp = pcBuf[i];
+                        pcBuf[i] = pcBuf[idx - i - 1];
+                        pcBuf[idx - i - 1] = temp;
+                    }
+
+                    // In phần nguyên
+                    UART_Write(p_uart, pcBuf, idx);
+
+                    // In dấu '.'
+                    UART_Write(p_uart, ".", 1);
+
+                    // Chuyển phần thập phân thành chuỗi
+                    if (precision < 0) precision = 6;
+                    for (int i = 0; i < precision; i++) {
+                        fractionalPart *= 10;
+                        int digit = (int)fractionalPart;
+                        pcBuf[i] = '0' + digit;
+                        fractionalPart -= digit;
+                    }
+                    UART_Write(p_uart, pcBuf, precision);
                     break;
                 }
 
-                //
-                // Handle all other commands.
-                //
-                default:
-                {
-                    //
-                    // Indicate an error.
-                    //
+                case '%': { // In ký tự '%'
+                    UART_Write(p_uart, "%", 1);
+                    break;
+                }
+
+                default: { // Định dạng không hợp lệ
                     UART_Write(p_uart, "ERROR", 5);
-
-                    //
-                    // This command has been handled.
-                    //
                     break;
                 }
             }
+        } else {
+            // In các ký tự thường
+            UART_Write(p_uart, pc_string, 1);
+            pc_string++;
         }
     }
+
     va_end(vaArgP);
 }
+
+
+//void UART_Printf(uart_stdio_typedef* p_uart, const char *pc_string, ...)
+//{
+//    uint16_t ui16Idx, ui16Value, ui16Pos, ui16Count, ui16Base, ui16Neg;
+//    char *pcStr, pcBuf[16], cFill;
+//
+//    //
+//    // Check the arguments.
+//    //
+//
+//    va_list vaArgP;
+//
+//    va_start(vaArgP, pc_string);
+//
+//    //
+//    // Loop while there are more characters in the string.
+//    //
+//    while(*pc_string)
+//    {
+//        //
+//        // Find the first non-% character, or the end of the string.
+//        //
+//        for(ui16Idx = 0;
+//            (pc_string[ui16Idx] != '%') && (pc_string[ui16Idx] != '\0');
+//            ui16Idx++)
+//        {
+//        }
+//
+//        //
+//        // Write this portion of the string.
+//        //
+//        UART_Write(p_uart, pc_string, ui16Idx);
+//
+//        //
+//        // Skip the portion of the string that was written.
+//        //
+//        pc_string += ui16Idx;
+//
+//        //
+//        // See if the next character is a %.
+//        //
+//        if(*pc_string == '%')
+//        {
+//            //
+//            // Skip the %.
+//            //
+//            pc_string++;
+//
+//            //
+//            // Set the digit count to zero, and the fill character to space
+//            // (in other words, to the defaults).
+//            //
+//            ui16Count = 0;
+//            cFill = ' ';
+//
+//            //
+//            // It may be necessary to get back here to process more characters.
+//            // Goto's aren't pretty, but effective.  I feel extremely dirty for
+//            // using not one but two of the beasts.
+//            //
+//again:
+//
+//            //
+//            // Determine how to handle the next character.
+//            //
+//            switch(*pc_string++)
+//            {
+//                //
+//                // Handle the digit characters.
+//                //
+//                case '0':
+//                case '1':
+//                case '2':
+//                case '3':
+//                case '4':
+//                case '5':
+//                case '6':
+//                case '7':
+//                case '8':
+//                case '9':
+//                {
+//                    //
+//                    // If this is a zero, and it is the first digit, then the
+//                    // fill character is a zero instead of a space.
+//                    //
+//                    if((pc_string[-1] == '0') && (ui16Count == 0))
+//                    {
+//                        cFill = '0';
+//                    }
+//
+//                    //
+//                    // Update the digit count.
+//                    //
+//                    ui16Count *= 10;
+//                    ui16Count += pc_string[-1] - '0';
+//
+//                    //
+//                    // Get the next character.
+//                    //
+//                    goto again;
+//                }
+//
+//                //
+//                // Handle the %c command.
+//                //
+//                case 'c':
+//                {
+//                    //
+//                    // Get the value from the varargs.
+//                    //
+//                    ui16Value = va_arg(vaArgP, int);
+//
+//                    //
+//                    // Print out the character.
+//                    //
+//                    UART_Write(p_uart, (char *)&ui16Value, 1);
+//
+//                    //
+//                    // This command has been handled.
+//                    //
+//                    break;
+//                }
+//
+//                //
+//                // Handle the %d and %i commands.
+//                //
+//                case 'd':
+//                case 'i':
+//                {
+//                    //
+//                    // Get the value from the varargs.
+//                    //
+//                    ui16Value = va_arg(vaArgP, int);
+//
+//                    //
+//                    // Reset the buffer position.
+//                    //
+//                    ui16Pos = 0;
+//
+//                    //
+//                    // If the value is negative, make it positive and indicate
+//                    // that a minus sign is needed.
+//                    //
+//                    if((int16_t)ui16Value < 0)
+//                    {
+//                        //
+//                        // Make the value positive.
+//                        //
+//                        ui16Value = -(int16_t)ui16Value;
+//
+//                        //
+//                        // Indicate that the value is negative.
+//                        //
+//                        ui16Neg = 1;
+//                    }
+//                    else
+//                    {
+//                        //
+//                        // Indicate that the value is positive so that a minus
+//                        // sign isn't inserted.
+//                        //
+//                        ui16Neg = 0;
+//                    }
+//
+//                    //
+//                    // Set the base to 10.
+//                    //
+//                    ui16Base = 10;
+//
+//                    //
+//                    // Convert the value to ASCII.
+//                    //
+//                    goto convert;
+//                }
+//
+//                //
+//                // Handle the %s command.
+//                //
+//                case 's':
+//                {
+//                    //
+//                    // Get the string pointer from the varargs.
+//                    //
+//                    pcStr = va_arg(vaArgP, char *);
+//
+//                    //
+//                    // Determine the length of the string.
+//                    //
+//                    for(ui16Idx = 0; pcStr[ui16Idx] != '\0'; ui16Idx++)
+//                    {
+//                    }
+//
+//                    //
+//                    // Write the string.
+//                    //
+//                    UART_Write(p_uart, pcStr, ui16Idx);
+//
+//                    //
+//                    // Write any required padding spaces
+//                    //
+//                    if(ui16Count > ui16Idx)
+//                    {
+//                        ui16Count -= ui16Idx;
+//                        while(ui16Count--)
+//                        {
+//                            UART_Write(p_uart, " ", 1);
+//                        }
+//                    }
+//
+//                    //
+//                    // This command has been handled.
+//                    //
+//                    break;
+//                }
+//
+//                //
+//                // Handle the %u command.
+//                //
+//                case 'u':
+//                {
+//                    //
+//                    // Get the value from the varargs.
+//                    //
+//                    ui16Value = va_arg(vaArgP, int);
+//
+//                    //
+//                    // Reset the buffer position.
+//                    //
+//                    ui16Pos = 0;
+//
+//                    //
+//                    // Set the base to 10.
+//                    //
+//                    ui16Base = 10;
+//
+//                    //
+//                    // Indicate that the value is positive so that a minus sign
+//                    // isn't inserted.
+//                    //
+//                    ui16Neg = 0;
+//
+//                    //
+//                    // Convert the value to ASCII.
+//                    //
+//                    goto convert;
+//                }
+//
+//                //
+//                // Handle the %x and %X commands.  Note that they are treated
+//                // identically; in other words, %X will use lower case letters
+//                // for a-f instead of the upper case letters it should use.  We
+//                // also alias %p to %x.
+//                //
+//                case 'x':
+//                case 'X':
+//                case 'p':
+//                {
+//                    //
+//                    // Get the value from the varargs.
+//                    //
+//                    ui16Value = va_arg(vaArgP, int);
+//
+//                    //
+//                    // Reset the buffer position.
+//                    //
+//                    ui16Pos = 0;
+//
+//                    //
+//                    // Set the base to 16.
+//                    //
+//                    ui16Base = 16;
+//
+//                    //
+//                    // Indicate that the value is positive so that a minus sign
+//                    // isn't inserted.
+//                    //
+//                    ui16Neg = 0;
+//
+//                    //
+//                    // Determine the number of digits in the string version of
+//                    // the value.
+//                    //
+//convert:
+//                    for(ui16Idx = 1;
+//                        (((ui16Idx * ui16Base) <= ui16Value) &&
+//                         (((ui16Idx * ui16Base) / ui16Base) == ui16Idx));
+//                        ui16Idx *= ui16Base, ui16Count--)
+//                    {
+//                    }
+//
+//                    //
+//                    // If the value is negative, reduce the count of padding
+//                    // characters needed.
+//                    //
+//                    if(ui16Neg)
+//                    {
+//                        ui16Count--;
+//                    }
+//
+//                    //
+//                    // If the value is negative and the value is padded with
+//                    // zeros, then place the minus sign before the padding.
+//                    //
+//                    if(ui16Neg && (cFill == '0'))
+//                    {
+//                        //
+//                        // Place the minus sign in the output buffer.
+//                        //
+//                        pcBuf[ui16Pos++] = '-';
+//
+//                        //
+//                        // The minus sign has been placed, so turn off the
+//                        // negative flag.
+//                        //
+//                        ui16Neg = 0;
+//                    }
+//
+//                    //
+//                    // Provide additional padding at the beginning of the
+//                    // string conversion if needed.
+//                    //
+//                    if((ui16Count > 1) && (ui16Count < 16))
+//                    {
+//                        for(ui16Count--; ui16Count; ui16Count--)
+//                        {
+//                            pcBuf[ui16Pos++] = cFill;
+//                        }
+//                    }
+//
+//                    //
+//                    // If the value is negative, then place the minus sign
+//                    // before the number.
+//                    //
+//                    if(ui16Neg)
+//                    {
+//                        //
+//                        // Place the minus sign in the output buffer.
+//                        //
+//                        pcBuf[ui16Pos++] = '-';
+//                    }
+//
+//                    //
+//                    // Convert the value into a string.
+//                    //
+//                    for(; ui16Idx; ui16Idx /= ui16Base)
+//                    {
+//                        pcBuf[ui16Pos++] =
+//                            HEX_reference[(ui16Value / ui16Idx) % ui16Base];
+//                    }
+//
+//                    //
+//                    // Write the string.
+//                    //
+//                    UART_Write(p_uart, pcBuf, ui16Pos);
+//
+//                    //
+//                    // This command has been handled.
+//                    //
+//                    break;
+//                }
+//
+//                //
+//                // Handle the %% command.
+//                //
+//                case '%':
+//                {
+//                    //
+//                    // Simply write a single %.
+//                    //
+//                    UART_Write(p_uart, pc_string - 1, 1);
+//
+//                    //
+//                    // This command has been handled.
+//                    //
+//                    break;
+//                }
+//
+//                //
+//                // Handle all other commands.
+//                //
+//                default:
+//                {
+//                    //
+//                    // Indicate an error.
+//                    //
+//                    UART_Write(p_uart, "ERROR", 5);
+//
+//                    //
+//                    // This command has been handled.
+//                    //
+//                    break;
+//                }
+//            }
+//        }
+//    }
+//    va_end(vaArgP);
+//}
 
 //*****************************************************************************
 //

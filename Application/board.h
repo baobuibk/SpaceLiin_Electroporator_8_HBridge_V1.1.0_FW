@@ -96,6 +96,9 @@
 /*******************DEBUG LED*******************/
 #define DEBUG_LED_PORT          GPIOC
 #define DEBUG_LED_PIN           LL_GPIO_PIN_4
+
+#define PULSE_LED_PORT          GPIOC
+#define PULSE_LED_PIN           LL_GPIO_PIN_5
 /***********************************************/
 
 #define GPP_TX_SIZE			64

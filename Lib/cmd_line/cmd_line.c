@@ -170,7 +170,8 @@ uint8_t CmdLineProcess(char *pcCmdLine)
             //
             if(!strcmp(g_ppcArgv[0], psCmdEntry->pcCmd))
             {
-
+            	strcpy(return_pc_cmd[return_index++],g_ppcArgv[0]);
+            	if(return_index > 4) return_index = 0;
                 return(psCmdEntry->pfnCmd(ui8Argc, g_ppcArgv));
             }
 

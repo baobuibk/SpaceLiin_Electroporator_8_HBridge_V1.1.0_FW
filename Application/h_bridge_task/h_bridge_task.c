@@ -86,13 +86,13 @@ void H_Bridge_Task(void*)
 
             H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
             H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
-
+            LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
             SchedulerTaskDisable(0);
         }
         else if(is_h_bridge_enable == true)
         {
             H_Bridge_Set_Pole(ps_HB_current->pos_pole_index, ps_HB_current->neg_pole_index);
-
+            LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
             if (ps_HB_current->hv_pos_count != 0)
             {
                 V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);

@@ -11,6 +11,7 @@
 #include "sensor_driver.h"
 
 extern bool is_sensor_read_finished;
+extern bool is_accel_calib;
 
 void Sensor_Task_Init(void);
 void Sensor_Read_Value(Sensor_Read_typedef read_type);

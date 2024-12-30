@@ -26,6 +26,8 @@
 #include "fsp_line_task.h"
 #include "sensor_task.h"
 #include "current_sense_task.h"
+#include "accel_pulsing_task.h"
+
 /*
 #include "impedance_task.h"
 #include "BMP390.h"

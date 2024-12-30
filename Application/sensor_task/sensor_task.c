@@ -69,6 +69,7 @@ static uint16_t     advance_buffer_index(volatile uint16_t* pui16Index, uint16_t
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 bool is_sensor_read_finished = false;
+bool is_accel_calib = true;
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 void Sensor_Task_Init(void)
@@ -96,16 +97,18 @@ void Sensor_Read_Task(void*)
 	if (is_sensor_init == false)
 	{
 		is_sensor_init = Sensor_Init();
-		
+
 		if (is_sensor_init == true)
 		{
 			UART_Printf(&RS232_UART, "Sensor Init success\n");
 			UART_Send_String(&RS232_UART, "> ");
 		}
-		
-		return;
+
 	}
 	
+	if(!is_accel_calib)
+		if(LSM6DSOX_Calib())
+			is_accel_calib = true;
 	if (IS_SENSOR_TASK_BUFFER_EMPTY(&Sensor_Task) == true)
 	{
 		return;

@@ -34,9 +34,14 @@
 #define LSM6DSOX_READ_ALL_ADDR_BASE		0x22
 #define LSM6DSOX_READ_ALL_SIZE			12
 
-#define GYRO_SENSITIVITY_500DPS		    17.50f
-#define LSM6DSOX_ACCEL_FS_8G			0.244f
+#define LSM6DSOX_X_OFS_USR 				0x73
+#define LSM6DSOX_Y_OFS_USR 				0x74
+#define LSM6DSOX_Z_OFS_USR 				0x75
 
+#define GYRO_SENSITIVITY_500DPS		    17.50f
+#define LSM6DSOX_ACCEL_FS_2G			0.122f
+
+#define LSM6DSOX_CALIB_TIMEOUT			5000
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef enum _Sensor_Read_Status_typedef_
 {
@@ -77,9 +82,9 @@ typedef enum _LSM6DSOX_read_typedef_
 
 typedef struct _LSM6DSOX_data_typedef_
 {
-	uint16_t x;
-	uint16_t y;
-	uint16_t z;
+	int16_t x;
+	int16_t y;
+	int16_t z;
 } LSM6DSOX_data_typedef;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -97,7 +102,7 @@ extern LSM6DSOX_data_typedef Sensor_Accel;
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 bool Sensor_Init(void);
-
+bool LSM6DSOX_Calib();
 /* :::::::::: LSM6DSOX Command :::::::: */
 bool Sensor_Read_Driver_Process(Sensor_Read_typedef read_type);
 

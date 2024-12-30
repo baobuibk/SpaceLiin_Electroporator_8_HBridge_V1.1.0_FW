@@ -33,6 +33,12 @@ typedef enum _FSP_CMD_typedef_
 
 	/* :::::::::: Ultility Command :::::::: */
 	FSP_CMD_HANDSHAKE,
+
+	/* :::::::::: Auto Accel Command :::::::: */
+	FSP_CMD_SET_AUTO_ACCEL,
+	FSP_CMD_SET_THRESHOLD_ACCEL,
+	FSP_CMD_GET_THRESHOLD_ACCEL,
+	FSP_CMD_STREAM_ACCEL,
 	
 } FSP_CMD_typedef;
 
@@ -166,6 +172,46 @@ typedef struct _FSP_HANDSAKE_
 
 } FSP_HANDSAKE;
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Accel Command ~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+typedef struct _FSP_SET_AUTO_ACCEL_FRAME_
+{
+	uint8_t 	State;      	/* 0: OFF, 1: ON */
+
+} FSP_SET_AUTO_ACCEL_FRAME;
+
+typedef struct _FSP_SET_THRESHOLD_ACCEL_FRAME_
+{
+	uint8_t 	XL;
+	uint8_t 	XH;
+	uint8_t		YL;
+	uint8_t		YH;
+	uint8_t		ZL;
+	uint8_t		ZH;
+
+} FSP_SET_THRESHOLD_ACCEL_FRAME;
+
+typedef struct _FSP_GET_THRESHOLD_ACCEL_FRAME_
+{
+	uint8_t 	XL;
+	uint8_t 	XH;
+	uint8_t		YL;
+	uint8_t		YH;
+	uint8_t		ZL;
+	uint8_t		ZH;
+
+} FSP_GET_THRESHOLD_ACCEL_FRAME;
+
+typedef struct _FSP_CMD_STREAM_ACCEL_FRAME_
+{
+	uint8_t		count;
+	uint8_t 	XL;
+	uint8_t 	XH;
+	uint8_t		YL;
+	uint8_t		YH;
+	uint8_t		ZL;
+	uint8_t		ZH;
+} FSP_CMD_STREAM_ACCEL_FRAME;
+
 // Union to encapsulate all frame types
 typedef union _FSP_Payload_Frame_typedef_
 {
@@ -196,6 +242,11 @@ typedef union _FSP_Payload_Frame_typedef_
 	/* :::::::::: Ultility Command :::::::: */
 	FSP_HANDSAKE							handshake;
 
+	/* :::::::::: Auto Accel Command :::::::: */
+	FSP_SET_AUTO_ACCEL_FRAME				set_auto_accel;
+	FSP_SET_THRESHOLD_ACCEL_FRAME			set_threshold_accel;
+	FSP_GET_THRESHOLD_ACCEL_FRAME			get_threshold_accel;
+	FSP_CMD_STREAM_ACCEL_FRAME				stream_accel;
 } FSP_Payload_Frame_typedef;
 
 typedef struct _FSP_Payload_typedef_

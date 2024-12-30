@@ -88,6 +88,12 @@ extern "C"
 
 //*****************************************************************************
 //
+//! Defines the value that is returned if an command is invalid.
+//
+//*****************************************************************************
+#define CMDLINE_NO_RESPONSE  (7)
+//*****************************************************************************
+//
 // Command line function callback type.
 //
 //*****************************************************************************
@@ -145,6 +151,9 @@ extern uint8_t CmdLineProcess(char *pcCmdLine);
 // Mark the end of the C bindings section for C++ compilers.
 //
 //*****************************************************************************
+
+extern char return_pc_cmd[5][20];
+extern uint8_t return_index;
 #ifdef __cplusplus
 }
 #endif

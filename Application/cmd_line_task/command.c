@@ -6,8 +6,9 @@
 
 #include "app.h"
 #include "command.h"
-
+#include "sensor_driver.h"
 #include "cmd_line.h"
+#include "sensor_task.h"
 //#include "pwm.h"
 //#include "fsp.h"
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -30,6 +31,8 @@ static uint8_t CMD_process_state = 0;
 
 static uint8_t ChannelMapping[8] = {2, 4, 7, 6, 5, 3, 0, 1};
 static uint8_t User_Channel_Mapping[8] = {7, 8, 1, 6, 2, 5, 4, 3};
+
+
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static void 	double_to_string(double value, char *buffer, uint8_t precision);
@@ -75,8 +78,16 @@ tCmdLineEntry g_psCmdTable[] =
 	{ "GET_SENSOR_ALTITUDE", 	CMD_GET_SENSOR_ALTITUDE, 	" : Get altitude" },
 	{ "GET_SENSOR_BMP390", 		CMD_GET_SENSOR_BMP390, 		" : Get temp, pressure and altitude" },
 
+
+	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Pulsing Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	{ "SET_THRESHOLD_ACCEL",	CMD_SET_THRESHOLD_ACCEL,	" : Set high threshold accel for auto pulsing" },
+	{ "GET_THRESHOLD_ACCEL",	CMD_GET_THRESHOLD_ACCEL, 	" : Get high threshold accel for auto pulsing" },
+	{ "SET_AUTO_ACCEL",			CMD_SET_AUTO_ACCEL,			" : Enable auto pulsing" },
+	{ "CALIB_ACCEL",			CMD_CALIB_ACCEL,			" : Enable auto accel calib" },
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Ultility Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-    { "MARCO",                  CMD_LINE_TEST,              "TEST" },
+    { "CLC",           			CMD_CLEAR_SCREEN,              " " },
+
+
 	{0,0,0}
 };
 
@@ -936,10 +947,10 @@ return CMDLINE_BAD_CMD;
 }
 
 /* :::::::::: Ultility Command :::::::: */
-int CMD_LINE_TEST(int argc, char *argv[])
+int CMD_CLEAR_SCREEN(int argc, char *argv[])
 {
-    UART_Send_String(&RS232_UART, "> POLO\n");
-    return CMDLINE_OK;
+    UART_Send_String(&RS232_UART, "\033[2J");
+    return CMDLINE_NO_RESPONSE;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -978,5 +989,48 @@ static void double_to_string(double value, char *buffer, uint8_t precision)
     // Null-terminate the string
     *buffer = '\0';
 }
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Pulsing Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+int CMD_SET_THRESHOLD_ACCEL(int argc, char *argv[]) {
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
 
+	Threshold_Accel.z = atoi(argv[1]);
+	return CMDLINE_OK;
+}
+
+int CMD_GET_THRESHOLD_ACCEL(int argc, char *argv[]) {
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+	UART_Printf(&RS232_UART, "\rAccel threshold is: %d\r\n",Threshold_Accel.z);
+	return CMDLINE_OK;
+}
+
+int CMD_SET_AUTO_ACCEL(int argc, char *argv[]) {
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+	int8_t receive_argm = atoi(argv[1]);
+
+	if ((receive_argm > 1) || (receive_argm < 0))
+		return CMDLINE_INVALID_ARG;
+	if(receive_argm)
+		Enable_Auto_Pulsing();
+	else
+		Disable_Auto_Pulsing();
+	return CMDLINE_OK;
+}
+
+int CMD_CALIB_ACCEL(int argc, char *argv[]) {
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+	is_accel_calib = false;
+	return CMDLINE_OK;
+}
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
