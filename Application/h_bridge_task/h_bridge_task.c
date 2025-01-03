@@ -135,7 +135,21 @@ void H_Bridge_Task(void*)
             }
             else
             {
-                is_h_bridge_enable = false;
+                if (H_Bridge_Set_Next_Sequence() == false)
+                {
+                    is_h_bridge_enable = false;
+
+                    ps_FSP_TX->CMD = FSP_CMD_SET_PULSE_CONTROL;
+                    ps_FSP_TX->Payload.set_pulse_control.State = is_h_bridge_enable;
+
+                    fsp_print(2);
+                }
+                else
+                {
+                    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+                    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+                }
+                
                 H_Bridge_State = H_BRIDGE_STOP_STATE;
             }
         }
@@ -179,7 +193,21 @@ void H_Bridge_Task(void*)
             }
             else
             {
-                is_h_bridge_enable = false;
+                if (H_Bridge_Set_Next_Sequence() == false)
+                {
+                    is_h_bridge_enable = false;
+
+                    ps_FSP_TX->CMD = FSP_CMD_SET_PULSE_CONTROL;
+                    ps_FSP_TX->Payload.set_pulse_control.State = is_h_bridge_enable;
+
+                    fsp_print(2);
+                }
+                else
+                {
+                    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+                    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+                }
+                
                 H_Bridge_State = H_BRIDGE_STOP_STATE;
             }
         }
@@ -213,7 +241,21 @@ void H_Bridge_Task(void*)
             }
             else
             {
-                is_h_bridge_enable = false;
+                if (H_Bridge_Set_Next_Sequence() == false)
+                {
+                    is_h_bridge_enable = false;
+
+                    ps_FSP_TX->CMD = FSP_CMD_SET_PULSE_CONTROL;
+                    ps_FSP_TX->Payload.set_pulse_control.State = is_h_bridge_enable;
+
+                    fsp_print(2);
+                }
+                else
+                {
+                    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+                    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+                }
+                
                 H_Bridge_State = H_BRIDGE_STOP_STATE;
             }
         }
@@ -237,7 +279,21 @@ void H_Bridge_Task(void*)
             }
             else
             {
-                is_h_bridge_enable = false;
+                if (H_Bridge_Set_Next_Sequence() == false)
+                {
+                    is_h_bridge_enable = false;
+
+                    ps_FSP_TX->CMD = FSP_CMD_SET_PULSE_CONTROL;
+                    ps_FSP_TX->Payload.set_pulse_control.State = is_h_bridge_enable;
+
+                    fsp_print(2);
+                }
+                else
+                {
+                    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+                    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+                }
+                
                 H_Bridge_State = H_BRIDGE_STOP_STATE;
             }
         }

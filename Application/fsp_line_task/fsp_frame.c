@@ -58,7 +58,12 @@ uint8_t FSP_Line_Process() {
 
 	case FSP_CMD_SET_SEQUENCE_DELETE: {
 		HB_sequence_array[(CMD_sequence_index)].is_setted &= ~(1 << 7);
-		CMD_total_sequence_index -= 1;
+
+		if (CMD_total_sequence_index > 0)
+		{
+			CMD_total_sequence_index -= 1;
+		}
+		
 		CMD_sequence_index = CMD_total_sequence_index;
 
 		UART_Send_String(&RS232_UART,
