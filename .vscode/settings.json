@@ -13,6 +13,7 @@
         "current_sense_task.h": "c",
         "stdbool.h": "c",
         "stm32f4xx_ll_gpio.h": "c",
-        "v_switch_driver.h": "c"
+        "v_switch_driver.h": "c",
+        "accel_pulsing_task.h": "c"
     }
 }

@@ -19,6 +19,7 @@ typedef enum _FSP_CMD_typedef_
 	FSP_CMD_SET_PULSE_CONTROL,
 
 	/* :::::::::: VOM Command :::::::: */
+	FSP_CMD_MEASURE_VOLT,
 	FSP_CMD_MEASURE_CURRENT,
 	FSP_CMD_MEASURE_IMPEDANCE,
 
@@ -102,6 +103,11 @@ typedef struct _FSP_SET_PULSE_CONTROL_FRAME_
 } FSP_SET_PULSE_CONTROL_FRAME;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ VOM Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+typedef struct _MEASURE_VOLT_FRAME_
+{
+	uint8_t		HV_volt[4];
+} MEASURE_VOLT_FRAME;
+
 typedef struct _MEASURE_CURRENT_FRAME_
 {
 	uint8_t 	Value_high;
@@ -111,6 +117,8 @@ typedef struct _MEASURE_CURRENT_FRAME_
 
 typedef struct _MEASURE_IMPEDANCE_FRAME_
 {
+	uint8_t		Pos_pole_index;
+	uint8_t		Neg_pole_index;
 	uint8_t		Period_high;
 	uint8_t		Period_low;
 	uint8_t 	Value_high;
@@ -227,6 +235,7 @@ typedef union _FSP_Payload_Frame_typedef_
 	FSP_SET_PULSE_CONTROL_FRAME				set_pulse_control;
 
 	/* :::::::::: VOM Command :::::::: */
+	MEASURE_VOLT_FRAME						measure_volt;
 	MEASURE_CURRENT_FRAME					measure_current;
 	MEASURE_IMPEDANCE_FRAME					measure_impedance;
 

@@ -22,6 +22,12 @@ typedef struct _current_sense_typedef
 	uint16_t    read_value;
 } current_sense_typedef;
 
+typedef enum _Current_Sense_Task_typedef_
+{
+    READ_CURRENT_STATE,
+    CALCULATE_IMPEDANCE_STATE,
+} Current_Sense_Task_typedef;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static bool is_ADC_read_completed   = false;
 
@@ -31,9 +37,17 @@ static void fsp_print(uint8_t packet_length);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 bool        is_Measure_Impedance    = false;
 
+bool        is_HV_volt_available    = false;
+uint32_t    Current_HV_volt         = 0;
+
 uint16_t    Current_Sense_Period    = 1000;
 uint32_t    Current_Sense_Sum       = 0;
 uint16_t    Current_Sense_Average   = 0;
+
+bool        is_Impedance_available  = false;
+
+Current_Sense_Task_typedef Current_Sense_Task_State = READ_CURRENT_STATE;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: Current Sense Task Init :::::::: */
 void Current_Sense_Task_Init(uint32_t Sampling_Time)
@@ -60,21 +74,52 @@ void Current_Sense_Task_Init(uint32_t Sampling_Time)
 /* :::::::::: Current Sense Task ::::::::::::: */
 void Current_Sense_Task(void*)
 {
-    if ((is_ADC_read_completed == true) && (Current_Sense_Count < Current_Sense_Period))
-    {
-        uint16_t current_sense_value = 0;
-        is_ADC_read_completed = false;
-        Current_Sense_Count++;
-        current_sense_value = CURRENT_SENSE_VALUE;
+    uint16_t Impedance = 0;
 
-        Current_Sense_Sum += current_sense_value;
-        LL_ADC_REG_StartConversionSWStart(ADC_I_SENSE_HANDLE);
-    }
-    
-    if (Current_Sense_Count >= Current_Sense_Period)
+    switch (Current_Sense_Task_State)
     {
-        //Current_Sense_Average = (Current_Sense_Sum / Current_Sense_Period) * 1.132139958;
-    	Current_Sense_Average = (Current_Sense_Sum / Current_Sense_Period) * 1.014607448;
+    case READ_CURRENT_STATE:
+    {
+        if ((is_ADC_read_completed == true) && (Current_Sense_Count < Current_Sense_Period))
+        {
+            uint16_t current_sense_value = 0;
+            is_ADC_read_completed = false;
+            Current_Sense_Count++;
+            current_sense_value = CURRENT_SENSE_VALUE;
+
+            Current_Sense_Sum += current_sense_value;
+            LL_ADC_REG_StartConversionSWStart(ADC_I_SENSE_HANDLE);
+        }
+        
+        if (Current_Sense_Count >= Current_Sense_Period)
+        {
+            //Current_Sense_Average = (Current_Sense_Sum / Current_Sense_Period) * 1.132139958;
+            //float temp = (float)Current_Sense_Sum / (float)Current_Sense_Period;
+            //Current_Sense_Average = temp * 1.014607448;
+            Current_Sense_Average = (float)Current_Sense_Sum / (float)Current_Sense_Period;
+
+            ps_FSP_TX->CMD = FSP_CMD_MEASURE_VOLT;
+            fsp_print(1);
+
+            Current_Sense_Task_State = CALCULATE_IMPEDANCE_STATE;
+        }
+
+        break;
+    }
+
+    case CALCULATE_IMPEDANCE_STATE:
+    {
+        if (is_HV_volt_available == false)
+        {
+            break;
+        }
+
+        Impedance = Current_HV_volt / Current_Sense_Average;
+
+        is_HV_volt_available = false;
+        is_Impedance_available = true;
+
+        Current_Sense_Task_State = CALCULATE_IMPEDANCE_STATE;
 
         if (is_Measure_Impedance == true)
         {
@@ -84,10 +129,10 @@ void Current_Sense_Task(void*)
             is_Measure_Impedance = false;
 
             ps_FSP_TX->CMD = FSP_CMD_MEASURE_IMPEDANCE;
-            ps_FSP_TX->Payload.measure_impedance.Value_low  =  Current_Sense_Average;
-            ps_FSP_TX->Payload.measure_impedance.Value_high = (Current_Sense_Average >> 8);
+            ps_FSP_TX->Payload.measure_impedance.Value_low  =  Impedance;
+            ps_FSP_TX->Payload.measure_impedance.Value_high = (Impedance >> 8);
 
-            fsp_print(5);
+            fsp_print(7);
         }
         else
         {
@@ -98,11 +143,20 @@ void Current_Sense_Task(void*)
             fsp_print(3);
         }
 
+        Current_HV_volt         = 0;
         Current_Sense_Sum       = 0;
         Current_Sense_Count     = 0;
         Current_Sense_Period    = 1000;
         
+        Current_Sense_Task_State = READ_CURRENT_STATE;
+
         SchedulerTaskDisable(3);
+
+        break;
+    }
+    
+    default:
+        break;
     }
 }
 

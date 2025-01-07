@@ -27,8 +27,11 @@ static void double_to_string(double value, char *buffer, uint8_t precision);
 //static void convertIntegerToBytes(int number, uint8_t arr[]);
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-extern uint8_t CMD_sequence_index;
-extern uint8_t CMD_total_sequence_index;
+extern uint8_t  CMD_sequence_index;
+extern uint8_t  CMD_total_sequence_index;
+
+extern bool 	is_HV_volt_available;
+extern uint32_t Current_HV_volt;
 
 /*
  extern double   compensated_pressure;
@@ -42,6 +45,20 @@ extern uint8_t CMD_total_sequence_index;
 uint8_t hs_relay_pole, ls_relay_pole, relay_state;
 uint8_t FSP_Line_Process() {
 	switch (ps_FSP_RX->CMD) {
+
+	case FSP_CMD_MEASURE_VOLT: {
+		Current_HV_volt =  ps_FSP_RX->Payload.measure_volt.HV_volt[3];
+		Current_HV_volt <<= 8;
+		Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[2];
+		Current_HV_volt <<= 8;
+		Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[1];
+		Current_HV_volt <<= 8;
+		Current_HV_volt |= ps_FSP_RX->Payload.measure_volt.HV_volt[0];
+
+		is_HV_volt_available = true;
+
+		return 1;
+	}
 
 	/* :::::::::: Pulse Control Command :::::::: */
 	case FSP_CMD_SET_SEQUENCE_INDEX: {
@@ -209,7 +226,7 @@ uint8_t FSP_Line_Process() {
 
 		is_h_bridge_enable = false;
 
-		H_Bridge_Set_Pole(3, 8);
+		H_Bridge_Set_Pole(ps_FSP_RX->Payload.measure_impedance.Pos_pole_index, ps_FSP_RX->Payload.measure_impedance.Neg_pole_index);
 		V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
 		H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
 		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
