@@ -18,14 +18,14 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Private Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-static const char * Error_Sequence_Code[5] =
-{
-    "> PULSE_POLE_IS_NOT_SETTED\n",
-    "> PULSE_COUNT_IS_NOT_SETTED\n",
-    "> PULSE_DELAY_IS_NOT_SETTED\n",
-    "> PULSE_HV_IS_NOT_SETTED\n",
-    "> PULSE_LV_IS_NOT_SETTED\n",
-};
+//static const char * Error_Sequence_Code[5] =
+//{
+//    "> PULSE_POLE_IS_NOT_SETTED\n",
+//    "> PULSE_COUNT_IS_NOT_SETTED\n",
+//    "> PULSE_DELAY_IS_NOT_SETTED\n",
+//    "> PULSE_HV_IS_NOT_SETTED\n",
+//    "> PULSE_LV_IS_NOT_SETTED\n",
+//};
 
 static uint8_t CMD_process_state = 0;
 
@@ -49,8 +49,10 @@ tCmdLineEntry g_psCmdTable[] =
 	{ "SET_PULSE_POLE",			CMD_SET_PULSE_POLE, 		" : Set pole for H Bridge Pole" },
     { "SET_PULSE_COUNT",		CMD_SET_PULSE_COUNT, 		" : Set number of pulse" },
     { "SET_PULSE_DELAY",		CMD_SET_PULSE_DELAY, 		" : Set delay between pulse hv and lv" },
-    { "SET_PULSE_HV", 			CMD_SET_PULSE_HV, 			" : Set hs pulse on time and off time" },
-    { "SET_PULSE_LV", 			CMD_SET_PULSE_LV, 			" : Set ls pulse on time and off time" },
+    { "SET_PULSE_HV_POS", 		CMD_SET_PULSE_HV_POS, 		" : Set hs pulse on time and off time" },
+	{ "SET_PULSE_HV_NEG", 		CMD_SET_PULSE_HV_NEG, 		" : Set hs pulse on time and off time" },
+    { "SET_PULSE_LV_POS", 		CMD_SET_PULSE_LV_POS, 		" : Set ls pulse on time and off time" },
+	{ "SET_PULSE_LV_NEG", 		CMD_SET_PULSE_LV_NEG, 		" : Set ls pulse on time and off time" },
     { "SET_PULSE_CONTROL", 		CMD_SET_PULSE_CONTROL, 		" : Start pulsing" },
 
 	{ "GET_SEQUENCE_INDEX",		CMD_GET_SEQUENCE_INDEX, 	" : Get current sequence index" },
@@ -60,8 +62,10 @@ tCmdLineEntry g_psCmdTable[] =
 	{ "GET_PULSE_POLE",			CMD_GET_PULSE_POLE, 		" : Set pole for H Bridge Pole" },
 	{ "GET_PULSE_COUNT",		CMD_GET_PULSE_COUNT, 		" : Get number of pulse" },
 	{ "GET_PULSE_DELAY",		CMD_GET_PULSE_DELAY, 		" : Get delay between pulse hv and lv" },
-	{ "GET_PULSE_HV", 			CMD_GET_PULSE_HV, 			" : Get hs pulse on time and off time" },
-	{ "GET_PULSE_LV", 			CMD_GET_PULSE_LV, 			" : Get ls pulse on time and off time" },
+	{ "GET_PULSE_HV_POS", 		CMD_GET_PULSE_HV_POS, 		" : Get hs pulse on time and off time" },
+	{ "GET_PULSE_HV_NEG", 		CMD_GET_PULSE_HV_NEG, 		" : Get hs pulse on time and off time" },
+	{ "GET_PULSE_LV_POS", 		CMD_GET_PULSE_LV_POS, 		" : Get ls pulse on time and off time" },
+	{ "GET_PULSE_LV_NEG", 		CMD_GET_PULSE_LV_NEG, 		" : Get ls pulse on time and off time" },
 	{ "GET_PULSE_CONTROL", 		CMD_GET_PULSE_CONTROL, 		" : Get info whether pulse starting pulsing" },
 	{ "GET_PULSE_ALL", 			CMD_GET_PULSE_ALL, 			" : Get all info about pulse" },
 
@@ -145,10 +149,17 @@ int CMD_SET_SEQUENCE_INDEX(int argc, char *argv[])
 
 		UART_Send_String(&RS232_UART, "> \n");
 
-		UART_Printf(&RS232_UART, "> HV PULSE ON TIME: %dms; HV PULSE OFF TIME: %dms\n",
-		HB_sequence_array[CMD_sequence_index].hv_on_ms, HB_sequence_array[CMD_sequence_index].hv_off_ms);
-		UART_Printf(&RS232_UART, "> LV PULSE ON TIME: %dms; LV PULSE OFF TIME: %dms\n",
-		HB_sequence_array[CMD_sequence_index].lv_on_ms, HB_sequence_array[CMD_sequence_index].lv_off_ms);
+		UART_Printf(&RS232_UART, "> HV PULSE POS ON TIME: %dms; HV PULSE POS OFF TIME: %dms\n", 
+		HB_sequence_array[CMD_sequence_index].hv_pos_on_ms, HB_sequence_array[CMD_sequence_index].hv_pos_off_ms);
+
+		UART_Printf(&RS232_UART, "> HV PULSE NEG ON TIME: %dms; HV PULSE NEG OFF TIME: %dms\n", 
+		HB_sequence_array[CMD_sequence_index].hv_neg_on_ms, HB_sequence_array[CMD_sequence_index].hv_neg_off_ms);
+
+		UART_Printf(&RS232_UART, "> LV PULSE POS ON TIME: %dms; LV PULSE POS OFF TIME: %dms\n",
+		HB_sequence_array[CMD_sequence_index].lv_pos_on_ms, HB_sequence_array[CMD_sequence_index].lv_pos_off_ms);
+
+		UART_Printf(&RS232_UART, "> LV PULSE NEG ON TIME: %dms; LV PULSE NEG OFF TIME: %dms\n",
+		HB_sequence_array[CMD_sequence_index].lv_neg_on_ms, HB_sequence_array[CMD_sequence_index].lv_neg_off_ms);
 
 		UART_Send_String(&RS232_UART, "> \n");
 		return CMDLINE_OK;
@@ -358,7 +369,7 @@ int CMD_SET_PULSE_DELAY(int argc, char *argv[])
 	return CMDLINE_OK;
 }
 
-int CMD_SET_PULSE_HV(int argc, char *argv[])
+int CMD_SET_PULSE_HV_POS(int argc, char *argv[])
 {
 	if (argc < 3)
 		return CMDLINE_TOO_FEW_ARGS;
@@ -380,13 +391,41 @@ int CMD_SET_PULSE_HV(int argc, char *argv[])
 		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 4);
 	}
 
-	HB_sequence_array[CMD_sequence_index].hv_on_ms   = receive_argm[0];
-	HB_sequence_array[CMD_sequence_index].hv_off_ms  = receive_argm[1];
+	HB_sequence_array[CMD_sequence_index].hv_pos_on_ms   = receive_argm[0];
+	HB_sequence_array[CMD_sequence_index].hv_pos_off_ms  = receive_argm[1];
 
 	return CMDLINE_OK;
 }
 
-int CMD_SET_PULSE_LV(int argc, char *argv[])
+int CMD_SET_PULSE_HV_NEG(int argc, char *argv[])
+{
+	if (argc < 3)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 3)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	int receive_argm[2];
+
+	receive_argm[0] = atoi(argv[1]);
+	receive_argm[1] = atoi(argv[2]);
+
+	if ((receive_argm[0] > 20) || (receive_argm[0] < 1))
+		return CMDLINE_INVALID_ARG;
+	else if ((receive_argm[1] > 20) || (receive_argm[1] < 1))
+		return CMDLINE_INVALID_ARG;
+
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 4)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 4);
+	}
+
+	HB_sequence_array[CMD_sequence_index].hv_neg_on_ms   = receive_argm[0];
+	HB_sequence_array[CMD_sequence_index].hv_neg_off_ms  = receive_argm[1];
+
+	return CMDLINE_OK;
+}
+
+int CMD_SET_PULSE_LV_POS(int argc, char *argv[])
 {
 	if (argc < 3)
 		return CMDLINE_TOO_FEW_ARGS;
@@ -408,8 +447,36 @@ int CMD_SET_PULSE_LV(int argc, char *argv[])
 		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 5);
 	}
 
-	HB_sequence_array[CMD_sequence_index].lv_on_ms 	= receive_argm[0];
-    HB_sequence_array[CMD_sequence_index].lv_off_ms	= receive_argm[1];
+	HB_sequence_array[CMD_sequence_index].lv_pos_on_ms 	= receive_argm[0];
+    HB_sequence_array[CMD_sequence_index].lv_pos_off_ms	= receive_argm[1];
+
+	return CMDLINE_OK;
+}
+
+int CMD_SET_PULSE_LV_NEG(int argc, char *argv[])
+{
+	if (argc < 3)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 3)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	int receive_argm[2];
+
+	receive_argm[0] = atoi(argv[1]);
+	receive_argm[1] = atoi(argv[2]);
+
+	if ((receive_argm[0] > 1000) || (receive_argm[0] < 1))
+		return CMDLINE_INVALID_ARG;
+	else if ((receive_argm[1] > 1000) || (receive_argm[1] < 1))
+		return CMDLINE_INVALID_ARG;
+
+	if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 5)) == false)
+	{
+		HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 5);
+	}
+
+	HB_sequence_array[CMD_sequence_index].lv_neg_on_ms 	= receive_argm[0];
+    HB_sequence_array[CMD_sequence_index].lv_neg_off_ms	= receive_argm[1];
 
 	return CMDLINE_OK;
 }
@@ -430,6 +497,8 @@ int CMD_SET_PULSE_CONTROL(int argc, char *argv[])
 		UART_Send_String(&RS232_UART, "> PULSE CONTROL IS DISABLED\n");
 		return CMDLINE_OK;
 	}
+
+	H_Bridge_Process_Sequence_Array();
 
 	is_h_bridge_enable = receive_argm;
 	SchedulerTaskEnable(0, 1);
@@ -496,10 +565,17 @@ int CMD_GET_SEQUENCE_ALL(int argc, char *argv[])
 
 		UART_Send_String(&RS232_UART, "> \n");
 
-		UART_Printf(&RS232_UART, "> HV PULSE ON TIME: %dms; HV PULSE OFF TIME: %dms\n",
-		HB_sequence_array[i].hv_on_ms, HB_sequence_array[i].hv_off_ms);
-		UART_Printf(&RS232_UART, "> LV PULSE ON TIME: %dms; LV PULSE OFF TIME: %dms\n",
-		HB_sequence_array[i].lv_on_ms, HB_sequence_array[i].lv_off_ms);
+		UART_Printf(&RS232_UART, "> HV PULSE POS ON TIME: %dms; HV PULSE POS OFF TIME: %dms\n", 
+		HB_sequence_array[CMD_sequence_index].hv_pos_on_ms, HB_sequence_array[CMD_sequence_index].hv_pos_off_ms);
+
+		UART_Printf(&RS232_UART, "> HV PULSE NEG ON TIME: %dms; HV PULSE NEG OFF TIME: %dms\n", 
+		HB_sequence_array[CMD_sequence_index].hv_neg_on_ms, HB_sequence_array[CMD_sequence_index].hv_neg_off_ms);
+
+		UART_Printf(&RS232_UART, "> LV PULSE POS ON TIME: %dms; LV PULSE POS OFF TIME: %dms\n",
+		HB_sequence_array[CMD_sequence_index].lv_pos_on_ms, HB_sequence_array[CMD_sequence_index].lv_pos_off_ms);
+
+		UART_Printf(&RS232_UART, "> LV PULSE NEG ON TIME: %dms; LV PULSE NEG OFF TIME: %dms\n",
+		HB_sequence_array[CMD_sequence_index].lv_neg_on_ms, HB_sequence_array[CMD_sequence_index].lv_neg_off_ms);
 
 		UART_Send_String(&RS232_UART, "> \n");
 	}
@@ -552,6 +628,32 @@ int CMD_GET_PULSE_DELAY(int argc, char *argv[])
 	return CMDLINE_OK;		
 }
 
+int CMD_GET_PULSE_HV_POS(int argc, char *argv[])
+{
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	UART_Printf(&RS232_UART, "> HV PULSE POS ON TIME: %dms; HV PULSE POS OFF TIME: %dms\n", 
+	HB_sequence_array[CMD_sequence_index].hv_pos_on_ms, HB_sequence_array[CMD_sequence_index].hv_pos_off_ms);
+
+	return CMDLINE_OK;
+}
+
+int CMD_GET_PULSE_HV_NEG(int argc, char *argv[])
+{
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	UART_Printf(&RS232_UART, "> HV PULSE NEG ON TIME: %dms; HV PULSE NEG OFF TIME: %dms\n", 
+	HB_sequence_array[CMD_sequence_index].hv_neg_on_ms, HB_sequence_array[CMD_sequence_index].hv_neg_off_ms);
+
+	return CMDLINE_OK;
+}
+
 int CMD_GET_PULSE_HV(int argc, char *argv[])
 {
 	if (argc < 1)
@@ -559,8 +661,37 @@ int CMD_GET_PULSE_HV(int argc, char *argv[])
 	else if (argc > 1)
 		return CMDLINE_TOO_MANY_ARGS;
 
-	UART_Printf(&RS232_UART, "HV PULSE ON TIME: %dms; HV PULSE OFF TIME: %dms\n", 
-	HB_sequence_array[CMD_sequence_index].hv_on_ms, HB_sequence_array[CMD_sequence_index].hv_off_ms);
+	UART_Printf(&RS232_UART, "> HV PULSE POS ON TIME: %dms; HV PULSE POS OFF TIME: %dms\n", 
+	HB_sequence_array[CMD_sequence_index].hv_pos_on_ms, HB_sequence_array[CMD_sequence_index].hv_pos_off_ms);
+
+	UART_Printf(&RS232_UART, "> HV PULSE NEG ON TIME: %dms; HV PULSE NEG OFF TIME: %dms\n", 
+	HB_sequence_array[CMD_sequence_index].hv_neg_on_ms, HB_sequence_array[CMD_sequence_index].hv_neg_off_ms);
+
+	return CMDLINE_OK;
+}
+
+int CMD_GET_PULSE_LV_POS(int argc, char *argv[])
+{
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	UART_Printf(&RS232_UART, "> LV PULSE POS ON TIME: %dms; LV PULSE POS OFF TIME: %dms\n",
+	HB_sequence_array[CMD_sequence_index].lv_pos_on_ms, HB_sequence_array[CMD_sequence_index].lv_pos_off_ms);
+
+	return CMDLINE_OK;
+}
+
+int CMD_GET_PULSE_LV_NEG(int argc, char *argv[])
+{
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	UART_Printf(&RS232_UART, "> LV PULSE NEG ON TIME: %dms; LV PULSE NEG OFF TIME: %dms\n",
+	HB_sequence_array[CMD_sequence_index].lv_neg_on_ms, HB_sequence_array[CMD_sequence_index].lv_neg_off_ms);
 
 	return CMDLINE_OK;
 }
@@ -572,8 +703,11 @@ int CMD_GET_PULSE_LV(int argc, char *argv[])
 	else if (argc > 1)
 		return CMDLINE_TOO_MANY_ARGS;
 
-	UART_Printf(&RS232_UART, "> LV PULSE ON TIME: %dms; LV PULSE OFF TIME: %dms\n",
-	HB_sequence_array[CMD_sequence_index].lv_on_ms, HB_sequence_array[CMD_sequence_index].lv_off_ms);
+	UART_Printf(&RS232_UART, "> LV PULSE POS ON TIME: %dms; LV PULSE POS OFF TIME: %dms\n",
+	HB_sequence_array[CMD_sequence_index].lv_pos_on_ms, HB_sequence_array[CMD_sequence_index].lv_pos_off_ms);
+
+	UART_Printf(&RS232_UART, "> LV PULSE NEG ON TIME: %dms; LV PULSE NEG OFF TIME: %dms\n",
+	HB_sequence_array[CMD_sequence_index].lv_neg_on_ms, HB_sequence_array[CMD_sequence_index].lv_neg_off_ms);
 
 	return CMDLINE_OK;
 }
@@ -632,10 +766,17 @@ int CMD_GET_PULSE_ALL(int argc, char *argv[])
 
 	UART_Send_String(&RS232_UART, "> \n");
 
-	UART_Printf(&RS232_UART, "> HV PULSE ON TIME: %dms; HV PULSE OFF TIME: %dms\n",
-	HB_sequence_array[CMD_sequence_index].hv_on_ms, HB_sequence_array[CMD_sequence_index].hv_off_ms);
-	UART_Printf(&RS232_UART, "> LV PULSE ON TIME: %dms; LV PULSE OFF TIME: %dms\n",
-	HB_sequence_array[CMD_sequence_index].lv_on_ms, HB_sequence_array[CMD_sequence_index].lv_off_ms);
+	UART_Printf(&RS232_UART, "> HV PULSE POS ON TIME: %dms; HV PULSE POS OFF TIME: %dms\n", 
+	HB_sequence_array[CMD_sequence_index].hv_pos_on_ms, HB_sequence_array[CMD_sequence_index].hv_pos_off_ms);
+
+	UART_Printf(&RS232_UART, "> HV PULSE NEG ON TIME: %dms; HV PULSE NEG OFF TIME: %dms\n", 
+	HB_sequence_array[CMD_sequence_index].hv_neg_on_ms, HB_sequence_array[CMD_sequence_index].hv_neg_off_ms);
+
+	UART_Printf(&RS232_UART, "> LV PULSE POS ON TIME: %dms; LV PULSE POS OFF TIME: %dms\n",
+	HB_sequence_array[CMD_sequence_index].lv_pos_on_ms, HB_sequence_array[CMD_sequence_index].lv_pos_off_ms);
+
+	UART_Printf(&RS232_UART, "> LV PULSE NEG ON TIME: %dms; LV PULSE NEG OFF TIME: %dms\n",
+	HB_sequence_array[CMD_sequence_index].lv_neg_on_ms, HB_sequence_array[CMD_sequence_index].lv_neg_off_ms);
 
 	UART_Send_String(&RS232_UART, "> \n");
 
@@ -656,7 +797,7 @@ int CMD_MEASURE_IMPEDANCE(int argc, char *argv[])
 	
     is_h_bridge_enable 		= false;
 
-	H_Bridge_Set_Pole(3, 8);
+	H_Bridge_Set_Pole(&HB_pos_pole, &HB_neg_pole, 3, 8);
     V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
     H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
     H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);

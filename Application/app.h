@@ -28,6 +28,9 @@
 #include "current_sense_task.h"
 #include "accel_pulsing_task.h"
 
+// TASK APPLICATION
+#include "h_bridge_sequence.h"
+
 /*
 #include "impedance_task.h"
 #include "BMP390.h"

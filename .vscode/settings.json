@@ -14,6 +14,12 @@
         "stdbool.h": "c",
         "stm32f4xx_ll_gpio.h": "c",
         "v_switch_driver.h": "c",
-        "accel_pulsing_task.h": "c"
+        "accel_pulsing_task.h": "c",
+        "pwm.h": "c",
+        "h_bridge_sequence.h": "c",
+        "scheduler.h": "c",
+        "string.h": "c",
+        "fsp_line_task.h": "c",
+        "h_bridge_task.h": "c"
     }
 }

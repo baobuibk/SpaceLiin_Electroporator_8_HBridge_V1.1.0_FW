@@ -472,7 +472,7 @@ static void LSM6DSOX_read_uncompensated_value(Sensor_Read_typedef read_type,
 static void LSM6DSOX_compensate_value(Sensor_Read_typedef read_type,
 		uint8_t *p_LSM6DSOX_RX_buffer) {
 	uint8_t *p_LSM6DSOX_data;
-	float data;
+	//float data;
 
 	switch (read_type) {
 

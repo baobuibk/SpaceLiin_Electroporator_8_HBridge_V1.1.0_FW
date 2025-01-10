@@ -170,45 +170,83 @@ uint8_t FSP_Line_Process() {
 		return 1;
 	}
 
-	case FSP_CMD_SET_PULSE_HV: {
+	case FSP_CMD_SET_PULSE_HV_POS: {
 		if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 4))
 				== false) {
 			HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 4);
 		}
 
-		HB_sequence_array[CMD_sequence_index].hv_on_ms =
-				ps_FSP_RX->Payload.set_pulse_HV.OnTime;
-		HB_sequence_array[CMD_sequence_index].hv_off_ms =
-				ps_FSP_RX->Payload.set_pulse_HV.OffTime;
+		HB_sequence_array[CMD_sequence_index].hv_pos_on_ms =
+				ps_FSP_RX->Payload.set_pulse_HV_pos.OnTime;
+		HB_sequence_array[CMD_sequence_index].hv_pos_off_ms =
+				ps_FSP_RX->Payload.set_pulse_HV_pos.OffTime;
 
-		UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_HV\r\n> ");
+		UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_HV_POS\r\n> ");
 		return 1;
 	}
 
-	case FSP_CMD_SET_PULSE_LV: {
+	case FSP_CMD_SET_PULSE_HV_NEG: {
+		if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 4))
+				== false) {
+			HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 4);
+		}
+
+		HB_sequence_array[CMD_sequence_index].hv_neg_on_ms =
+				ps_FSP_RX->Payload.set_pulse_HV_neg.OnTime;
+		HB_sequence_array[CMD_sequence_index].hv_neg_off_ms =
+				ps_FSP_RX->Payload.set_pulse_HV_neg.OffTime;
+
+		UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_HV_NEG\r\n> ");
+		return 1;
+	}
+
+	case FSP_CMD_SET_PULSE_LV_POS: {
 		if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 5))
 				== false) {
 			HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 5);
 		}
 
-		HB_sequence_array[CMD_sequence_index].lv_on_ms =
-				ps_FSP_RX->Payload.set_pulse_LV.OnTime_high;
-		HB_sequence_array[CMD_sequence_index].lv_on_ms <<= 8;
-		HB_sequence_array[CMD_sequence_index].lv_on_ms |=
-				ps_FSP_RX->Payload.set_pulse_LV.OnTime_low;
+		HB_sequence_array[CMD_sequence_index].lv_pos_on_ms =
+				ps_FSP_RX->Payload.set_pulse_LV_pos.OnTime_high;
+		HB_sequence_array[CMD_sequence_index].lv_pos_on_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].lv_pos_on_ms |=
+				ps_FSP_RX->Payload.set_pulse_LV_pos.OnTime_low;
 
-		HB_sequence_array[CMD_sequence_index].lv_off_ms =
-				ps_FSP_RX->Payload.set_pulse_LV.OffTime_high;
-		HB_sequence_array[CMD_sequence_index].lv_off_ms <<= 8;
-		HB_sequence_array[CMD_sequence_index].lv_off_ms |=
-				ps_FSP_RX->Payload.set_pulse_LV.OffTime_low;
+		HB_sequence_array[CMD_sequence_index].lv_pos_off_ms =
+				ps_FSP_RX->Payload.set_pulse_LV_pos.OffTime_high;
+		HB_sequence_array[CMD_sequence_index].lv_pos_off_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].lv_pos_off_ms |=
+				ps_FSP_RX->Payload.set_pulse_LV_pos.OffTime_low;
 
-		UART_Send_String(&RS232_UART, "Received FSP_CMD_PULSE_LV\r\n> ");
+		UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_LV_POS\r\n> ");
+		return 1;
+	}
+
+	case FSP_CMD_SET_PULSE_LV_NEG: {
+		if ((HB_sequence_array[CMD_sequence_index].is_setted & (1 << 5))
+				== false) {
+			HB_sequence_array[CMD_sequence_index].is_setted |= (1 << 5);
+		}
+
+		HB_sequence_array[CMD_sequence_index].lv_neg_on_ms =
+				ps_FSP_RX->Payload.set_pulse_LV_neg.OnTime_high;
+		HB_sequence_array[CMD_sequence_index].lv_neg_on_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].lv_neg_on_ms |=
+				ps_FSP_RX->Payload.set_pulse_LV_neg.OnTime_low;
+
+		HB_sequence_array[CMD_sequence_index].lv_neg_off_ms =
+				ps_FSP_RX->Payload.set_pulse_LV_neg.OffTime_high;
+		HB_sequence_array[CMD_sequence_index].lv_neg_off_ms <<= 8;
+		HB_sequence_array[CMD_sequence_index].lv_neg_off_ms |=
+				ps_FSP_RX->Payload.set_pulse_LV_neg.OffTime_low;
+
+		UART_Send_String(&RS232_UART, "Received FSP_CMD_SET_PULSE_LV_NEG\r\n> ");
 		return 1;
 	}
 
 	case FSP_CMD_SET_PULSE_CONTROL: {
-		//H_Bridge_Set_Pole(3, 8);
+		H_Bridge_Process_Sequence_Array();
+		
 		is_h_bridge_enable = ps_FSP_RX->Payload.set_pulse_control.State;
 		SchedulerTaskEnable(0, 1);
 
@@ -226,7 +264,7 @@ uint8_t FSP_Line_Process() {
 
 		is_h_bridge_enable = false;
 
-		H_Bridge_Set_Pole(ps_FSP_RX->Payload.measure_impedance.Pos_pole_index, ps_FSP_RX->Payload.measure_impedance.Neg_pole_index);
+		H_Bridge_Set_Pole(&HB_pos_pole, &HB_neg_pole, ps_FSP_RX->Payload.measure_impedance.Pos_pole_index, ps_FSP_RX->Payload.measure_impedance.Neg_pole_index);
 		V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
 		H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
 		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);

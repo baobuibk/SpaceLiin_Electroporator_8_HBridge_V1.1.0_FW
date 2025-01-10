@@ -1,10 +1,11 @@
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Include~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-#include "app.h"
+//#include "app.h"
+#include "board.h"
 
 #include "h_bridge_driver.h"
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 #define SD_DUTY_MIN \
-((APB1_TIMER_CLK / 1000000) * 100) / (H_Bridge_x->PWM.Prescaler)
+((APB1_TIMER_CLK / 1000000) * 100) / (p_HB_task_data->HB_pole_pulse.PWM.Prescaler)
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -94,6 +95,8 @@ H_Bridge_typdef HB_neg_pole =
 H_Bridge_typdef* p_HB_SD_0_3_IRQn = &HB_pos_pole;
 H_Bridge_typdef* p_HB_SD_4_7_IRQn = &HB_neg_pole;
 
+H_Bridge_Task_typedef HB_Task_data[10];
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: H Bridge Driver Init :::::::: */
 void H_Bridge_Driver_Init(void)
@@ -143,21 +146,21 @@ void H_Bridge_Driver_Init(void)
     LL_TIM_EnableCounter(H_BRIDGE_SD4_7_HANDLE);
 }
 
-void H_Bridge_Set_Pole(uint8_t pos_pole_index, uint8_t neg_pole_index)
+void H_Bridge_Set_Pole(H_Bridge_typdef* p_HB_pos_pole, H_Bridge_typdef* p_HB_neg_pole, uint8_t pos_pole_index, uint8_t neg_pole_index)
 {
     //Set pole for positive pole
-    HB_pos_pole.Pin         = &HB_pin_array[pos_pole_index];
-    HB_pos_pole.Pin_State   = &HB_pin_state_array[pos_pole_index];
+    p_HB_pos_pole->Pin         = &HB_pin_array[pos_pole_index];
+    p_HB_pos_pole->Pin_State   = &HB_pin_state_array[pos_pole_index];
 
-    (pos_pole_index < 4) ? (HB_pos_pole.PWM.TIMx = H_BRIDGE_SD0_3_HANDLE) : (HB_pos_pole.PWM.TIMx = H_BRIDGE_SD4_7_HANDLE);
-    HB_pos_pole.PWM.Channel = HB_PWM_channel_array[pos_pole_index];
+    (pos_pole_index < 4) ? (p_HB_pos_pole->PWM.TIMx = H_BRIDGE_SD0_3_HANDLE) : (p_HB_pos_pole->PWM.TIMx = H_BRIDGE_SD4_7_HANDLE);
+    p_HB_pos_pole->PWM.Channel = HB_PWM_channel_array[pos_pole_index];
 
     //Set pole for negative pole
-    HB_neg_pole.Pin         = &HB_pin_array[neg_pole_index];
-    HB_neg_pole.Pin_State   = &HB_pin_state_array[neg_pole_index];
+    p_HB_neg_pole->Pin         = &HB_pin_array[neg_pole_index];
+    p_HB_neg_pole->Pin_State   = &HB_pin_state_array[neg_pole_index];
     
-    (neg_pole_index < 4) ? (HB_neg_pole.PWM.TIMx = H_BRIDGE_SD0_3_HANDLE) : (HB_neg_pole.PWM.TIMx = H_BRIDGE_SD4_7_HANDLE);
-    HB_neg_pole.PWM.Channel = HB_PWM_channel_array[neg_pole_index];
+    (neg_pole_index < 4) ? (p_HB_neg_pole->PWM.TIMx = H_BRIDGE_SD0_3_HANDLE) : (p_HB_neg_pole->PWM.TIMx = H_BRIDGE_SD4_7_HANDLE);
+    p_HB_neg_pole->PWM.Channel = HB_PWM_channel_array[neg_pole_index];
 }
 
 void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
@@ -209,11 +212,23 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
     LL_TIM_EnableIT_UPDATE(H_Bridge_x->PWM.TIMx);
 }
 
-void H_Bridge_Set_Pulse_Timing(H_Bridge_typdef* H_Bridge_x, uint16_t Set_delay_time_ms, uint16_t Set_on_time_ms, uint16_t Set_off_time_ms, uint16_t Set_pulse_count)
+void H_Bridge_Calculate_Timing(
+                               H_Bridge_Task_data_typedef* p_HB_task_data,
+                               V_Switch_mode               _VS_mode_,
+
+                               uint16_t Set_delay_time_ms, 
+                               uint16_t Set_on_time_ms, 
+                               uint16_t Set_off_time_ms, 
+                               uint16_t Set_pulse_count
+                              )
 {
-    LL_TIM_DisableIT_UPDATE(H_Bridge_x->PWM.TIMx);
-    LL_TIM_DisableCounter(H_Bridge_x->PWM.TIMx);
-    LL_TIM_ClearFlag_UPDATE(H_Bridge_x->PWM.TIMx);
+    p_HB_task_data->VS_mode = _VS_mode_;
+
+    p_HB_task_data->HB_pole_ls_on.PWM.Mode     = LL_TIM_OCMODE_FORCED_INACTIVE;
+    p_HB_task_data->HB_pole_ls_on.PWM.Polarity = LL_TIM_OCPOLARITY_HIGH;
+
+    p_HB_task_data->HB_pole_pulse.PWM.Mode     = LL_TIM_OCMODE_FORCED_INACTIVE;
+    p_HB_task_data->HB_pole_pulse.PWM.Polarity = LL_TIM_OCPOLARITY_HIGH;
 
     /* 
     * @brief Calculate the maximum of Set_delay_time_ms, Set_on_time_ms, and Set_off_time_ms.
@@ -229,26 +244,21 @@ void H_Bridge_Set_Pulse_Timing(H_Bridge_typdef* H_Bridge_x, uint16_t Set_delay_t
 
     uint16_t min_time_ms =  (Set_on_time_ms < Set_off_time_ms) ? Set_on_time_ms : Set_off_time_ms;
      
-    H_Bridge_x->PWM.Prescaler   = (((APB1_TIMER_CLK / 1000) * max_time_ms) / (UINT16_MAX)) + 1;
-    H_Bridge_x->PWM.Prescaler   = (H_Bridge_x->PWM.Prescaler > UINT16_MAX) ? UINT16_MAX : H_Bridge_x->PWM.Prescaler;
+    p_HB_task_data->HB_pole_pulse.PWM.Prescaler = (((APB1_TIMER_CLK / 1000) * max_time_ms) / (UINT16_MAX)) + 1;
+    p_HB_task_data->HB_pole_pulse.PWM.Prescaler = (p_HB_task_data->HB_pole_pulse.PWM.Prescaler > UINT16_MAX) ? UINT16_MAX : p_HB_task_data->HB_pole_pulse.PWM.Prescaler;
 
-    H_Bridge_x->PWM.Duty        = ((APB1_TIMER_CLK / 1000) * min_time_ms) / (H_Bridge_x->PWM.Prescaler * 100);
-    H_Bridge_x->PWM.Duty        = (H_Bridge_x->PWM.Duty > SD_DUTY_MIN) ? H_Bridge_x->PWM.Duty : SD_DUTY_MIN;
+    p_HB_task_data->HB_pole_pulse.PWM.Duty      = ((APB1_TIMER_CLK / 1000) * min_time_ms) / (p_HB_task_data->HB_pole_pulse.PWM.Prescaler * 100);
+    p_HB_task_data->HB_pole_pulse.PWM.Duty      = (p_HB_task_data->HB_pole_pulse.PWM.Duty > SD_DUTY_MIN) ? p_HB_task_data->HB_pole_pulse.PWM.Duty : SD_DUTY_MIN;
 
-    H_Bridge_x->delay_time_ms   = Set_delay_time_ms;
+    p_HB_task_data->HB_pole_ls_on.PWM.Prescaler = 1;
 
-    H_Bridge_x->on_time_ms      = Set_on_time_ms;
-    H_Bridge_x->off_time_ms     = Set_off_time_ms;
+    p_HB_task_data->HB_pole_pulse.delay_time_ms   = Set_delay_time_ms;
+    p_HB_task_data->HB_pole_pulse.on_time_ms      = Set_on_time_ms;
+    p_HB_task_data->HB_pole_pulse.off_time_ms     = Set_off_time_ms;
+    p_HB_task_data->HB_pole_pulse.set_pulse_count = Set_pulse_count;
+    p_HB_task_data->HB_pole_pulse.pulse_count     = 0;
 
-    H_Bridge_x->set_pulse_count = Set_pulse_count;
-    H_Bridge_x->pulse_count     = 0;
-
-    LL_TIM_SetPrescaler(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Prescaler);
-    LL_TIM_GenerateEvent_UPDATE(H_Bridge_x->PWM.TIMx);
-    LL_TIM_ClearFlag_UPDATE(H_Bridge_x->PWM.TIMx);
-
-    LL_TIM_EnableIT_UPDATE(H_Bridge_x->PWM.TIMx);
-    LL_TIM_EnableCounter(H_Bridge_x->PWM.TIMx);
+    p_HB_task_data->is_setted                     = true;
 }
 
 void H_Bridge_Kill(void)
@@ -717,3 +727,45 @@ PWM_TypeDef HB_PWM_SD4_7 =
         p_HB_SD_4_7_IRQn->is_setted = true;
     }
 } */
+
+// void H_Bridge_Set_Pulse_Timing(H_Bridge_typdef* H_Bridge_x, uint16_t Set_delay_time_ms, uint16_t Set_on_time_ms, uint16_t Set_off_time_ms, uint16_t Set_pulse_count)
+// {
+//     LL_TIM_DisableIT_UPDATE(H_Bridge_x->PWM.TIMx);
+//     LL_TIM_DisableCounter(H_Bridge_x->PWM.TIMx);
+//     LL_TIM_ClearFlag_UPDATE(H_Bridge_x->PWM.TIMx);
+
+//     /* 
+//     * @brief Calculate the maximum of Set_delay_time_ms, Set_on_time_ms, and Set_off_time_ms.
+//     * @details 
+//     *   - If 'Set_delay_time_ms' is greater than 'Set_on_time_ms', check if 'Set_delay_time_ms' is also greater than 'Set_off_time_ms'.
+//     *     If true, 'Set_delay_time_ms' is the maximum; otherwise, 'Set_off_time_ms' is the maximum.
+//     *   - If 'Set_delay_time_ms' is not greater than 'Set_on_time_ms', then check if 'Set_on_time_ms' is greater than 'Set_off_time_ms'.
+//     *     If true, 'Set_on_time_ms' is the maximum; otherwise, 'Set_off_time_ms' is the maximum.
+//     */
+//     uint16_t max_time_ms =  (Set_delay_time_ms > Set_on_time_ms) ? 
+//                             ((Set_delay_time_ms > Set_off_time_ms) ? Set_delay_time_ms : Set_off_time_ms) : 
+//                             ((Set_on_time_ms > Set_off_time_ms) ? Set_on_time_ms : Set_off_time_ms);
+
+//     uint16_t min_time_ms =  (Set_on_time_ms < Set_off_time_ms) ? Set_on_time_ms : Set_off_time_ms;
+     
+//     H_Bridge_x->PWM.Prescaler   = (((APB1_TIMER_CLK / 1000) * max_time_ms) / (UINT16_MAX)) + 1;
+//     H_Bridge_x->PWM.Prescaler   = (H_Bridge_x->PWM.Prescaler > UINT16_MAX) ? UINT16_MAX : H_Bridge_x->PWM.Prescaler;
+
+//     H_Bridge_x->PWM.Duty        = ((APB1_TIMER_CLK / 1000) * min_time_ms) / (H_Bridge_x->PWM.Prescaler * 100);
+//     H_Bridge_x->PWM.Duty        = (H_Bridge_x->PWM.Duty > SD_DUTY_MIN) ? H_Bridge_x->PWM.Duty : SD_DUTY_MIN;
+
+//     H_Bridge_x->delay_time_ms   = Set_delay_time_ms;
+
+//     H_Bridge_x->on_time_ms      = Set_on_time_ms;
+//     H_Bridge_x->off_time_ms     = Set_off_time_ms;
+
+//     H_Bridge_x->set_pulse_count = Set_pulse_count;
+//     H_Bridge_x->pulse_count     = 0;
+
+//     LL_TIM_SetPrescaler(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Prescaler);
+//     LL_TIM_GenerateEvent_UPDATE(H_Bridge_x->PWM.TIMx);
+//     LL_TIM_ClearFlag_UPDATE(H_Bridge_x->PWM.TIMx);
+
+//     LL_TIM_EnableIT_UPDATE(H_Bridge_x->PWM.TIMx);
+//     LL_TIM_EnableCounter(H_Bridge_x->PWM.TIMx);
+// }

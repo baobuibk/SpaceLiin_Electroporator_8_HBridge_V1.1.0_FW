@@ -14,8 +14,10 @@ typedef enum _FSP_CMD_typedef_
 	FSP_CMD_SET_PULSE_POLE,
 	FSP_CMD_SET_PULSE_COUNT,
 	FSP_CMD_SET_PULSE_DELAY,
-	FSP_CMD_SET_PULSE_HV,
-	FSP_CMD_SET_PULSE_LV,
+	FSP_CMD_SET_PULSE_HV_POS,
+	FSP_CMD_SET_PULSE_HV_NEG,
+	FSP_CMD_SET_PULSE_LV_POS,
+	FSP_CMD_SET_PULSE_LV_NEG,
 	FSP_CMD_SET_PULSE_CONTROL,
 
 	/* :::::::::: VOM Command :::::::: */
@@ -230,8 +232,10 @@ typedef union _FSP_Payload_Frame_typedef_
 	FSP_SET_PULSE_POLE_FRAME				set_pulse_pole;
 	FSP_SET_PULSE_COUNT_FRAME				set_pulse_count;
 	FSP_SET_PULSE_DELAY_FRAME				set_pulse_delay;
-	FSP_SET_PULSE_HV_FRAME					set_pulse_HV;
-	FSP_SET_PULSE_LV_FRAME					set_pulse_LV;
+	FSP_SET_PULSE_HV_FRAME					set_pulse_HV_pos;
+	FSP_SET_PULSE_HV_FRAME					set_pulse_HV_neg;
+	FSP_SET_PULSE_LV_FRAME					set_pulse_LV_pos;
+	FSP_SET_PULSE_LV_FRAME					set_pulse_LV_neg;
 	FSP_SET_PULSE_CONTROL_FRAME				set_pulse_control;
 
 	/* :::::::::: VOM Command :::::::: */
