@@ -70,6 +70,7 @@ if(is_h_bridge_enable == false)
     fsp_print(2);
 
     SchedulerTaskDisable(0);
+    return;
 }
 
 switch (H_Bridge_State)
@@ -78,11 +79,23 @@ case H_BRIDGE_INITIAL_SET_STATE:
 {
     current_HB_Task_data_index   = 0;
     current_HB_timing_data_index = 0;
- 
-    if (H_Bridge_Set_Next_HB_Task_Data() == false)
+
+    ps_current_HB_Task_data   = &HB_Task_data[current_HB_Task_data_index];
+    ps_current_HB_timing_data = &ps_current_HB_Task_data->task_data[current_HB_timing_data_index];
+
+    if (HB_Task_data[0].is_setted == false)
     {
         is_h_bridge_enable = false;
         break;
+    }
+
+    if (HB_Task_data[0].task_data[0].is_setted == false)
+    {
+        if (H_Bridge_Set_Next_HB_Task_Data() == false)
+        {
+            is_h_bridge_enable = false;
+            break;
+        }
     }
     
     LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
@@ -130,7 +143,7 @@ static bool H_Bridge_Set_Next_HB_Task_Data(void)
         return 0;
     }
     
-    for (; (ps_current_HB_Task_data->task_data[current_HB_timing_data_index].is_setted == false) && (current_HB_timing_data_index < 4); current_HB_timing_data_index++)
+    for (++current_HB_timing_data_index; (ps_current_HB_Task_data->task_data[current_HB_timing_data_index].is_setted == false) && (current_HB_timing_data_index < 4); ++current_HB_timing_data_index)
     {
         ;
     }
@@ -153,9 +166,12 @@ static bool H_Bridge_Set_Next_HB_Task_Data(void)
     current_HB_Task_data_index   = next_HB_Task_data_index;
     current_HB_timing_data_index = 0;
 
-    for (; (ps_current_HB_Task_data->task_data[current_HB_timing_data_index].is_setted == false) && (current_HB_timing_data_index < 4); current_HB_timing_data_index++)
+    if (HB_Task_data[0].is_setted == false)
     {
-        ;
+        for (++current_HB_timing_data_index; (ps_current_HB_Task_data->task_data[current_HB_timing_data_index].is_setted == false) && (current_HB_timing_data_index < 4); ++current_HB_timing_data_index)
+        {
+            ;
+        }
     }
 
     ps_current_HB_Task_data    = &HB_Task_data[current_HB_Task_data_index];

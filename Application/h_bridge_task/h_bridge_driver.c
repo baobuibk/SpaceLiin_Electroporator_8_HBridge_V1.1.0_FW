@@ -174,8 +174,13 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
     switch (SetMode)
     {
     case H_BRIDGE_MODE_PULSE:
+        LL_TIM_SetPrescaler(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Prescaler);
+        LL_TIM_GenerateEvent_UPDATE(H_Bridge_x->PWM.TIMx);
+
         HB_Set_Freq(&H_Bridge_x->PWM, (1000.0 / (float)H_Bridge_x->delay_time_ms), 1);
         HB_Set_OC(&H_Bridge_x->PWM, 0, 1);
+
+        //SD timing
         LL_TIM_OC_SetMode(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Channel, LL_TIM_OCMODE_PWM2);
         HB_Set_Freq(&H_Bridge_x->PWM, (1000.0 / (float)H_Bridge_x->on_time_ms), 0); //Period = 1ms
         HB_Set_OC(&H_Bridge_x->PWM, H_Bridge_x->PWM.Duty, 0); //Duty = 50us
@@ -186,9 +191,14 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
         break;
     case H_BRIDGE_MODE_HS_ON:
     case H_BRIDGE_MODE_LS_ON:
+        LL_TIM_SetPrescaler(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Prescaler);
+        LL_TIM_GenerateEvent_UPDATE(H_Bridge_x->PWM.TIMx);
+        LL_TIM_ClearFlag_UPDATE(H_Bridge_x->PWM.TIMx);
+
         LL_TIM_OC_SetMode(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Channel, LL_TIM_OCMODE_PWM2);
         HB_Set_Freq(&H_Bridge_x->PWM, 1000.0, 1); //Period = 1ms
         HB_Set_Duty(&H_Bridge_x->PWM, 10, 1); //Duty = 100us
+
         H_Bridge_x->pulse_count = 0;
         H_Bridge_x->delay_time_ms = 0;
 

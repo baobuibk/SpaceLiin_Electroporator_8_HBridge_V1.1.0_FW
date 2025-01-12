@@ -96,8 +96,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
     if (HB_sequence_array[sequence_index].hv_pos_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[0].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[0].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[0].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].pos_pole_index,
                           HB_sequence_array[sequence_index].neg_pole_index
                          );
@@ -118,8 +118,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
     else if (HB_sequence_array[sequence_index].hv_neg_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[1].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[1].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[1].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].neg_pole_index,
                           HB_sequence_array[sequence_index].pos_pole_index
                          );
@@ -139,8 +139,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
     else if (HB_sequence_array[sequence_index].lv_pos_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[2].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[2].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[2].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].pos_pole_index,
                           HB_sequence_array[sequence_index].neg_pole_index
                          );
@@ -160,8 +160,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_1_STATE)
     else if (HB_sequence_array[sequence_index].lv_neg_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[3].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].neg_pole_index,
                           HB_sequence_array[sequence_index].pos_pole_index
                          );
@@ -191,8 +191,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
     if (HB_sequence_array[sequence_index].hv_neg_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[1].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[1].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[1].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].neg_pole_index,
                           HB_sequence_array[sequence_index].pos_pole_index
                          );
@@ -206,12 +206,14 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
                                    HB_sequence_array[sequence_index].hv_neg_off_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_count
                                  );
+
+        H_Bridge_Sequence_Process_State = H_BRIDGE_LV_1_STATE;
     }
     else if (HB_sequence_array[sequence_index].lv_pos_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[2].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[2].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[2].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].pos_pole_index,
                           HB_sequence_array[sequence_index].neg_pole_index
                          );
@@ -231,8 +233,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
     else if (HB_sequence_array[sequence_index].lv_neg_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[3].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].neg_pole_index,
                           HB_sequence_array[sequence_index].pos_pole_index
                          );
@@ -262,8 +264,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_1_STATE )
     if (HB_sequence_array[sequence_index].lv_pos_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[2].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[2].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[2].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].pos_pole_index,
                           HB_sequence_array[sequence_index].neg_pole_index
                          );
@@ -283,8 +285,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_1_STATE )
     else if (HB_sequence_array[sequence_index].lv_neg_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[3].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].neg_pole_index,
                           HB_sequence_array[sequence_index].pos_pole_index
                          );
@@ -314,8 +316,8 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_2_STATE )
     if (HB_sequence_array[sequence_index].lv_neg_count != 0)
     {
         H_Bridge_Set_Pole(
-                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           &HB_Task_data[sequence_index].task_data[3].HB_pole_pulse,
+                          &HB_Task_data[sequence_index].task_data[3].HB_pole_ls_on,
                           HB_sequence_array[sequence_index].neg_pole_index,
                           HB_sequence_array[sequence_index].pos_pole_index
                          );

@@ -20,6 +20,8 @@
         "scheduler.h": "c",
         "string.h": "c",
         "fsp_line_task.h": "c",
-        "h_bridge_task.h": "c"
+        "h_bridge_task.h": "c",
+        "stm32f4xx_ll_tim.h": "c",
+        "stm32f4xx_ll_rcc.h": "c"
     }
 }
