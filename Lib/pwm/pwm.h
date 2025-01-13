@@ -8,12 +8,11 @@
 #include "stm32f4xx_ll_rcc.h"
 #include "stm32f4xx_ll_tim.h"
 
-/*
 #define APB1_TIMER_CLK \
  __LL_RCC_CALC_PCLK1_FREQ(__LL_RCC_CALC_HCLK_FREQ(SystemCoreClock, 2), LL_RCC_GetAPB1Prescaler())
- */
 
-#define APB1_TIMER_CLK 36000000
+
+//#define APB1_TIMER_CLK 36000000
 
 /*
 typedef struct
