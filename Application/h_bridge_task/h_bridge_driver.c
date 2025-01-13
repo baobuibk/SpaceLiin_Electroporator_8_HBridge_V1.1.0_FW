@@ -149,6 +149,7 @@ void H_Bridge_Driver_Init(void)
 void H_Bridge_Set_Pole(H_Bridge_typdef* p_HB_pos_pole, H_Bridge_typdef* p_HB_neg_pole, uint8_t pos_pole_index, uint8_t neg_pole_index)
 {
     //Set pole for positive pole
+    p_HB_pos_pole->Port        = H_BRIDGE_HIN0_7_PORT;
     p_HB_pos_pole->Pin         = &HB_pin_array[pos_pole_index];
     p_HB_pos_pole->Pin_State   = &HB_pin_state_array[pos_pole_index];
 
@@ -156,6 +157,7 @@ void H_Bridge_Set_Pole(H_Bridge_typdef* p_HB_pos_pole, H_Bridge_typdef* p_HB_neg
     p_HB_pos_pole->PWM.Channel = HB_PWM_channel_array[pos_pole_index];
 
     //Set pole for negative pole
+    p_HB_neg_pole->Port        = H_BRIDGE_HIN0_7_PORT;
     p_HB_neg_pole->Pin         = &HB_pin_array[neg_pole_index];
     p_HB_neg_pole->Pin_State   = &HB_pin_state_array[neg_pole_index];
     
@@ -233,12 +235,6 @@ void H_Bridge_Calculate_Timing(
                               )
 {
     p_HB_task_data->VS_mode = _VS_mode_;
-
-    p_HB_task_data->HB_pole_ls_on.PWM.Mode     = LL_TIM_OCMODE_FORCED_INACTIVE;
-    p_HB_task_data->HB_pole_ls_on.PWM.Polarity = LL_TIM_OCPOLARITY_HIGH;
-
-    p_HB_task_data->HB_pole_pulse.PWM.Mode     = LL_TIM_OCMODE_FORCED_INACTIVE;
-    p_HB_task_data->HB_pole_pulse.PWM.Polarity = LL_TIM_OCPOLARITY_HIGH;
 
     /* 
     * @brief Calculate the maximum of Set_delay_time_ms, Set_on_time_ms, and Set_off_time_ms.

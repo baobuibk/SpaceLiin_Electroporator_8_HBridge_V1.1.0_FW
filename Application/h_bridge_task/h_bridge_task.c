@@ -160,8 +160,13 @@ static bool H_Bridge_Set_Next_HB_Task_Data(void)
 
     if (HB_Task_data[next_HB_Task_data_index].is_setted == false)
     {
+        H_Bridge_Set_Mode(&ps_current_HB_timing_data->HB_pole_ls_on, H_BRIDGE_MODE_FLOAT);
+        H_Bridge_Set_Mode(&ps_current_HB_timing_data->HB_pole_pulse, H_BRIDGE_MODE_FLOAT);
         return 0;
     }
+
+    H_Bridge_Set_Mode(&ps_current_HB_timing_data->HB_pole_ls_on, H_BRIDGE_MODE_FLOAT);
+    H_Bridge_Set_Mode(&ps_current_HB_timing_data->HB_pole_pulse, H_BRIDGE_MODE_FLOAT);
 
     current_HB_Task_data_index   = next_HB_Task_data_index;
     current_HB_timing_data_index = 0;

@@ -201,7 +201,7 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
                                    &HB_Task_data[sequence_index].task_data[1],
                                    V_SWITCH_MODE_HV_ON,
 
-                                   HB_sequence_array[sequence_index].sequence_delay_ms, 
+                                   HB_sequence_array[sequence_index].hv_delay_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_off_ms, 
                                    HB_sequence_array[sequence_index].hv_neg_count
@@ -222,7 +222,7 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
                                    &HB_Task_data[sequence_index].task_data[2],
                                    V_SWITCH_MODE_LV_ON,
 
-                                   HB_sequence_array[sequence_index].sequence_delay_ms, 
+                                   HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_on_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_off_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_count
@@ -243,7 +243,7 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_HV_2_STATE )
                                    &HB_Task_data[sequence_index].task_data[3],
                                    V_SWITCH_MODE_LV_ON,
 
-                                   HB_sequence_array[sequence_index].sequence_delay_ms, 
+                                   HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_off_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_count
@@ -274,7 +274,7 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_1_STATE )
                                    &HB_Task_data[sequence_index].task_data[2],
                                    V_SWITCH_MODE_LV_ON,
 
-                                   HB_sequence_array[sequence_index].sequence_delay_ms, 
+                                   HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_on_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_off_ms, 
                                    HB_sequence_array[sequence_index].lv_pos_count
@@ -295,7 +295,7 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_1_STATE )
                                    &HB_Task_data[sequence_index].task_data[3],
                                    V_SWITCH_MODE_LV_ON,
 
-                                   HB_sequence_array[sequence_index].sequence_delay_ms, 
+                                   HB_sequence_array[sequence_index].pulse_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_off_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_count
@@ -326,7 +326,7 @@ if (H_Bridge_Sequence_Process_State == H_BRIDGE_LV_2_STATE )
                                    &HB_Task_data[sequence_index].task_data[3],
                                    V_SWITCH_MODE_LV_ON,
 
-                                   HB_sequence_array[sequence_index].sequence_delay_ms, 
+                                   HB_sequence_array[sequence_index].lv_delay_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_on_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_off_ms, 
                                    HB_sequence_array[sequence_index].lv_neg_count
