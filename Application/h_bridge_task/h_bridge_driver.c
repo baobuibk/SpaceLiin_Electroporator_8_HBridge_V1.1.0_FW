@@ -3,6 +3,7 @@
 #include "board.h"
 
 #include "h_bridge_driver.h"
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 #define SD_DUTY_MIN \
 ((APB1_TIMER_CLK / 1000000) * 100) / (p_HB_task_data->HB_pole_pulse.PWM.Prescaler)
@@ -201,6 +202,7 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
         HB_Set_Freq(&H_Bridge_x->PWM, 1000.0, 1); //Period = 1ms
         HB_Set_Duty(&H_Bridge_x->PWM, 10, 1); //Duty = 100us
 
+        *H_Bridge_x->Pin_State = 1;
         H_Bridge_x->pulse_count = 0;
         H_Bridge_x->delay_time_ms = 0;
 
@@ -306,12 +308,28 @@ void H_Bridge_SD_Interupt_Handle(H_Bridge_typdef* p_HB_SD_IRQn)
 
             break;
         case H_BRIDGE_MODE_HS_ON:
-            LL_GPIO_SetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);
+            if (*p_HB_SD_IRQn->Pin_State == 1)
+            {
+                LL_GPIO_SetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);
+                LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
-            LL_TIM_OC_SetMode(p_HB_SD_IRQn->PWM.TIMx, p_HB_SD_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
-            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
-            LL_TIM_ClearFlag_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+                LL_TIM_OC_SetMode(p_HB_SD_IRQn->PWM.TIMx, p_HB_SD_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+                LL_TIM_SetPrescaler(p_HB_SD_IRQn->PWM.TIMx, 5494);
+                HB_Set_Freq(&p_HB_SD_IRQn->PWM, 0.1, 1);
+                
+                LL_TIM_ClearFlag_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+
+                *p_HB_SD_IRQn->Pin_State = 0;
+            }
+            else
+            {
+                LL_GPIO_ResetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);
+                LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+                LL_TIM_DisableIT_UPDATE(p_HB_SD_IRQn->PWM.TIMx);
+                *p_HB_SD_IRQn->Pin_State = 1;
+            }
+
             break;
         case H_BRIDGE_MODE_LS_ON:
             LL_GPIO_ResetOutputPin(p_HB_SD_IRQn->Port, *p_HB_SD_IRQn->Pin);

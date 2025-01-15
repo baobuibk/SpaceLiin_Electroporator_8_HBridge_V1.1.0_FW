@@ -38,6 +38,7 @@ static void fsp_print(uint8_t packet_length);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // H_Bridge_Task_typedef HB_Task_data[10];
 
+bool is_manual_mode_enable = false;
 bool is_h_bridge_enable = false;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

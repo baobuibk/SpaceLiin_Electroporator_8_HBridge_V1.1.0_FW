@@ -69,6 +69,15 @@ tCmdLineEntry g_psCmdTable[] =
 	{ "GET_PULSE_CONTROL", 		CMD_GET_PULSE_CONTROL, 		" : Get info whether pulse starting pulsing" },
 	{ "GET_PULSE_ALL", 			CMD_GET_PULSE_ALL, 			" : Get all info about pulse" },
 
+	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Pulsing Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	{ "SET_THRESHOLD_ACCEL",	CMD_SET_THRESHOLD_ACCEL,	" : Set high threshold accel for auto pulsing" },
+	{ "GET_THRESHOLD_ACCEL",	CMD_GET_THRESHOLD_ACCEL, 	" : Get high threshold accel for auto pulsing" },
+	{ "SET_AUTO_ACCEL",			CMD_SET_AUTO_ACCEL,			" : Enable auto pulsing" },
+	{ "CALIB_ACCEL",			CMD_CALIB_ACCEL,			" : Enable auto accel calib" },
+
+	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Manual Pulse Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+	{ "SET_PULSE_MANUAL", 		CMD_SET_PULSE_MANUAL, 		" : Turn on, off pulse manually" },
+
 	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ VOM Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	{ "MEASURE_IMPEDANCE", 		CMD_MEASURE_IMPEDANCE,		" : Measure cuvette impedance"},
 
@@ -84,12 +93,6 @@ tCmdLineEntry g_psCmdTable[] =
 
 	{ "GET_SENSOR_H3LIS", 		CMD_GET_SENSOR_H3LIS, 		" : Get accel from sensor H3LIS331DL" },
 
-
-	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Pulsing Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-	{ "SET_THRESHOLD_ACCEL",	CMD_SET_THRESHOLD_ACCEL,	" : Set high threshold accel for auto pulsing" },
-	{ "GET_THRESHOLD_ACCEL",	CMD_GET_THRESHOLD_ACCEL, 	" : Get high threshold accel for auto pulsing" },
-	{ "SET_AUTO_ACCEL",			CMD_SET_AUTO_ACCEL,			" : Enable auto pulsing" },
-	{ "CALIB_ACCEL",			CMD_CALIB_ACCEL,			" : Enable auto accel calib" },
     /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Ultility Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
     { "CLC",           			CMD_CLEAR_SCREEN,              " " },
 
@@ -485,6 +488,21 @@ int CMD_SET_PULSE_LV_NEG(int argc, char *argv[])
 
 int CMD_SET_PULSE_CONTROL(int argc, char *argv[])
 {
+	if (is_manual_mode_enable == true)
+	{
+		UART_Send_String(&RS232_UART, "> TURNING OFF MANUAL MODE\n");
+		UART_Send_String(&RS232_UART, "> SET PULSE CONTROL ENABLE\n");
+
+		V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+		H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+	}
+
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+
 	int8_t receive_argm = atoi(argv[1]);
 
 	if ((receive_argm > 1) || (receive_argm < 0))
@@ -781,6 +799,101 @@ int CMD_GET_PULSE_ALL(int argc, char *argv[])
 	HB_sequence_array[CMD_sequence_index].lv_neg_on_ms, HB_sequence_array[CMD_sequence_index].lv_neg_off_ms);
 
 	UART_Send_String(&RS232_UART, "> \n");
+
+	return CMDLINE_OK;
+}
+
+/* :::::::::: Auto Pulsing Command :::::::: */
+int CMD_SET_THRESHOLD_ACCEL(int argc, char *argv[]) {
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	Threshold_Accel.z = atoi(argv[1]);
+	return CMDLINE_OK;
+}
+
+int CMD_GET_THRESHOLD_ACCEL(int argc, char *argv[]) {
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+	UART_Printf(&RS232_UART, "\rAccel threshold is: %d\r\n",Threshold_Accel.z);
+	return CMDLINE_OK;
+}
+
+int CMD_SET_AUTO_ACCEL(int argc, char *argv[]) {
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+	int8_t receive_argm = atoi(argv[1]);
+
+	if ((receive_argm > 1) || (receive_argm < 0))
+		return CMDLINE_INVALID_ARG;
+	if(receive_argm)
+		Enable_Auto_Pulsing();
+	else
+		Disable_Auto_Pulsing();
+	return CMDLINE_OK;
+}
+
+int CMD_CALIB_ACCEL(int argc, char *argv[]) {
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+	is_accel_calib = false;
+	return CMDLINE_OK;
+}
+
+/* :::::::::: Manual Pulse Command :::::::::: */
+int CMD_SET_PULSE_MANUAL(int argc, char *argv[])
+{
+	if (is_h_bridge_enable == true)
+	{
+		UART_Send_String(&RS232_UART, "> ERROR: H BRIDGE IS RUNNING\n");
+	}
+	
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	uint8_t receive_argm[2];
+
+	receive_argm[0] = atoi(argv[1]);
+	receive_argm[1] = atoi(argv[2]);
+
+	if ((receive_argm[0] > 1) || (receive_argm[0] < 0))
+		return CMDLINE_INVALID_ARG;
+
+	if ((receive_argm[1] > 2) || (receive_argm[1] < 1))
+		return CMDLINE_INVALID_ARG;
+
+	is_manual_mode_enable = receive_argm[0];
+
+	if (receive_argm[0] == true)
+	{
+		if (receive_argm[1] == 1)
+		{
+			V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+		}
+		else
+		{
+			V_Switch_Set_Mode(V_SWITCH_MODE_LV_ON);
+		}
+		
+    	H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+    	H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
+
+		return CMDLINE_OK;
+	}
+	
+	V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
 
 	return CMDLINE_OK;
 }
@@ -1153,48 +1266,5 @@ static void double_to_string(double value, char *buffer, uint8_t precision)
     // Null-terminate the string
     *buffer = '\0';
 }
-/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Pulsing Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-int CMD_SET_THRESHOLD_ACCEL(int argc, char *argv[]) {
-	if (argc < 2)
-		return CMDLINE_TOO_FEW_ARGS;
-	else if (argc > 2)
-		return CMDLINE_TOO_MANY_ARGS;
 
-	Threshold_Accel.z = atoi(argv[1]);
-	return CMDLINE_OK;
-}
-
-int CMD_GET_THRESHOLD_ACCEL(int argc, char *argv[]) {
-	if (argc < 1)
-		return CMDLINE_TOO_FEW_ARGS;
-	else if (argc > 1)
-		return CMDLINE_TOO_MANY_ARGS;
-	UART_Printf(&RS232_UART, "\rAccel threshold is: %d\r\n",Threshold_Accel.z);
-	return CMDLINE_OK;
-}
-
-int CMD_SET_AUTO_ACCEL(int argc, char *argv[]) {
-	if (argc < 2)
-		return CMDLINE_TOO_FEW_ARGS;
-	else if (argc > 2)
-		return CMDLINE_TOO_MANY_ARGS;
-	int8_t receive_argm = atoi(argv[1]);
-
-	if ((receive_argm > 1) || (receive_argm < 0))
-		return CMDLINE_INVALID_ARG;
-	if(receive_argm)
-		Enable_Auto_Pulsing();
-	else
-		Disable_Auto_Pulsing();
-	return CMDLINE_OK;
-}
-
-int CMD_CALIB_ACCEL(int argc, char *argv[]) {
-	if (argc < 1)
-		return CMDLINE_TOO_FEW_ARGS;
-	else if (argc > 1)
-		return CMDLINE_TOO_MANY_ARGS;
-	is_accel_calib = false;
-	return CMDLINE_OK;
-}
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ End of the program ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
