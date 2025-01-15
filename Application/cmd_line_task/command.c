@@ -6,7 +6,7 @@
 
 #include "app.h"
 #include "command.h"
-#include "sensor_driver.h"
+// #include "sensor_driver.h"
 #include "cmd_line.h"
 #include "sensor_task.h"
 //#include "pwm.h"
@@ -81,6 +81,8 @@ tCmdLineEntry g_psCmdTable[] =
 	{ "GET_SENSOR_PRESSURE", 	CMD_GET_SENSOR_PRESSURE, 	" : Get pressure" },
 	{ "GET_SENSOR_ALTITUDE", 	CMD_GET_SENSOR_ALTITUDE, 	" : Get altitude" },
 	{ "GET_SENSOR_BMP390", 		CMD_GET_SENSOR_BMP390, 		" : Get temp, pressure and altitude" },
+
+	{ "GET_SENSOR_H3LIS", 		CMD_GET_SENSOR_H3LIS, 		" : Get accel from sensor H3LIS331DL" },
 
 
 	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Pulsing Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -828,12 +830,10 @@ case 0:
 
 case 1:
 {
-	if (is_sensor_read_finished == false)
+	if (Is_Sensor_Read_Complete() == false)
 	{
 		return CMDLINE_IS_PROCESSING;
 	}
-
-	is_sensor_read_finished = false;
 	
 	UART_Printf(&RS232_UART, "> GYRO x: %dmpds; GYRO y: %dmpds; GYRO z: %dmpds\n", Sensor_Gyro.x, Sensor_Gyro.y, Sensor_Gyro.z);
 	CMD_process_state = 0;
@@ -865,14 +865,12 @@ case 0:
 
 case 1:
 {
-	if (is_sensor_read_finished == false)
+	if (Is_Sensor_Read_Complete() == false)
 	{
 		return CMDLINE_IS_PROCESSING;
 	}
-
-	is_sensor_read_finished = false;
 	
-	UART_Printf(&RS232_UART, "> ACCEL x: %dmm/s2; ACCEL y: %dmm/s2; ACCEL z: %dmm/s2\n", Sensor_Accel.x, Sensor_Accel.y, Sensor_Accel.z);
+	UART_Printf(&RS232_UART, "> ACCEL x: %dmg; ACCEL y: %dmg; ACCEL z: %dmg\n", Sensor_Accel.x, Sensor_Accel.y, Sensor_Accel.z);
 	CMD_process_state = 0;
     return CMDLINE_OK;
 }
@@ -902,15 +900,13 @@ case 0:
 
 case 1:
 {
-	if (is_sensor_read_finished == false)
+	if (Is_Sensor_Read_Complete() == false)
 	{
 		return CMDLINE_IS_PROCESSING;
 	}
-
-	is_sensor_read_finished = false;
 	
 	UART_Printf(&RS232_UART, "> GYRO x: %dmpds; GYRO y: %dmpds; GYRO z: %dmpds\n", Sensor_Gyro.x, Sensor_Gyro.y, Sensor_Gyro.z);
-	UART_Printf(&RS232_UART, "> ACCEL x: %dmm/s2; ACCEL y: %dmm/s2; ACCEL z: %dmm/s2\n", Sensor_Accel.x, Sensor_Accel.y, Sensor_Accel.z);
+	UART_Printf(&RS232_UART, "> ACCEL x: %dmg; ACCEL y: %dmg; ACCEL z: %dmg\n", Sensor_Accel.x, Sensor_Accel.y, Sensor_Accel.z);
 	CMD_process_state = 0;
     return CMDLINE_OK;
 }
@@ -940,12 +936,10 @@ case 0:
 
 case 1:
 {
-	if (is_sensor_read_finished == false)
+	if (Is_Sensor_Read_Complete() == false)
 	{
 		return CMDLINE_IS_PROCESSING;
 	}
-
-	is_sensor_read_finished = false;
 	
 	char fractional_string[16] = {0};
 	double_to_string(Sensor_Temp, fractional_string, 3);
@@ -980,12 +974,10 @@ case 0:
 
 case 1:
 {
-	if (is_sensor_read_finished == false)
+	if (Is_Sensor_Read_Complete() == false)
 	{
 		return CMDLINE_IS_PROCESSING;
 	}
-
-	is_sensor_read_finished = false;
 
 	char fractional_string[16] = {0};
 	double_to_string(Sensor_Pressure, fractional_string, 3);
@@ -1020,12 +1012,10 @@ case 0:
 
 case 1:
 {
-	if (is_sensor_read_finished == false)
+	if (Is_Sensor_Read_Complete() == false)
 	{
 		return CMDLINE_IS_PROCESSING;
 	}
-
-	is_sensor_read_finished = false;
 	
 	char fractional_string[16] = {0};
 	double_to_string(Sensor_Altitude, fractional_string, 3);
@@ -1060,12 +1050,10 @@ case 0:
 
 case 1:
 {
-	if (is_sensor_read_finished == false)
+	if (Is_Sensor_Read_Complete() == false)
 	{
 		return CMDLINE_IS_PROCESSING;
 	}
-
-	is_sensor_read_finished = false;
 
 	char fractional_string[16] = {0};
 
@@ -1077,6 +1065,41 @@ case 1:
 
 	double_to_string(Sensor_Altitude, fractional_string, 3);
 	UART_Printf(&RS232_UART, "> ALTITUDE: %s m\n", fractional_string);
+	CMD_process_state = 0;
+    return CMDLINE_OK;
+}
+
+default:
+	break;
+}
+return CMDLINE_BAD_CMD;
+}
+
+int CMD_GET_SENSOR_H3LIS(int argc, char *argv[])
+{
+switch (CMD_process_state)
+{
+case 0:
+{
+	if (argc < 1)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 1)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	Sensor_Read_Value(SENSOR_READ_H3LIS331DL);
+	CMD_process_state = 1;
+	return CMDLINE_IS_PROCESSING;
+}
+
+
+case 1:
+{
+	if (Is_Sensor_Read_Complete() == false)
+	{
+		return CMDLINE_IS_PROCESSING;
+	}
+
+	UART_Printf(&RS232_UART, "> ACCEL x: %dmg; ACCEL y: %dmg; ACCEL z: %dmg\n", H3LIS_Accel.x, H3LIS_Accel.y, H3LIS_Accel.z);
 	CMD_process_state = 0;
     return CMDLINE_OK;
 }

@@ -23,6 +23,12 @@
         "h_bridge_task.h": "c",
         "stm32f4xx_ll_tim.h": "c",
         "stm32f4xx_ll_rcc.h": "c",
-        "board.h": "c"
+        "board.h": "c",
+        "i2c_driver.h": "c",
+        "lsm6dsox.h": "c",
+        "bmp390.h": "c",
+        "sensor_driver.h": "c",
+        "sensor_interface.h": "c",
+        "h3lis331dl.h": "c"
     }
 }

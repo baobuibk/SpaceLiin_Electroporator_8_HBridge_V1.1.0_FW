@@ -1,22 +1,42 @@
-#ifndef ACCEL_PULSING_TASK_ACCEL_H_
+#ifndef _I2C_DRIVER_H_
 
-#define ACCEL_PULSING_TASK_ACCEL_H_
+#define _I2C_DRIVER_H_
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Include ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+#include <stdint.h>
+
+#include "stm32f405xx.h"
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-extern LSM6DSOX_data_typedef Threshold_Accel;
-
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-/* :::::::::: Task Init :::::::: */
-// void Accel_Pulsing_Task_Init();
+/* :::::::::: I2C Command :::::::: */
+void I2C_Mem_Write_IT
+(
+    I2C_TypeDef *I2Cx,
+    uint8_t     devAddress,
+    uint8_t     memAddress,
+    uint8_t     *data,
+    uint8_t     size
+);
 
-/* :::::::::: Task ::::::::::::: */
-void Accel_Pulsing_Task(void*);
-void Enable_Auto_Pulsing();
-void Disable_Auto_Pulsing();
+void I2C_Mem_Read_IT
+(
+    I2C_TypeDef *I2Cx,
+    uint8_t     devAddress,
+	uint8_t     memAddress,
+    uint8_t     *data,
+    uint8_t     size
+);
 
-#endif /* ACCEL_PULSING_TASK_ACCEL_H_ */
+bool Is_I2C_Write_Complete();
+bool Is_I2C_Read_Complete();
+
+/* :::::::::: IRQ Handler ::::::::::::: */
+void I2C_EV_IRQHandler(void);
+
+#endif //_I2C_DRIVER_H_

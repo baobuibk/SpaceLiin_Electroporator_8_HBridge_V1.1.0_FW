@@ -32,7 +32,10 @@ typedef enum _FSP_CMD_typedef_
 
 	FSP_CMD_GET_SENSOR_TEMP,
 	FSP_CMD_GET_SENSOR_PRESSURE,
+	FSP_CMD_GET_SENSOR_ALTITUDE,
 	FSP_CMD_GET_SENSOR_BMP390,
+
+	FSP_CMD_GET_SENSOR_H3LIS331DL,
 
 	/* :::::::::: Ultility Command :::::::: */
 	FSP_CMD_HANDSHAKE,
@@ -168,12 +171,27 @@ typedef struct _GET_SENSOR_PRESSURE_
 
 } GET_SENSOR_PRESSURE;
 
+typedef struct _GET_SENSOR_ALTITUDE_
+{
+	uint8_t 	altitude[4];
+
+} GET_SENSOR_ALTITUDE;
+
 typedef struct _GET_SENSOR_BMP390_
 {
 	uint8_t 	temp[6];
 	uint8_t 	pressure[7];
+	uint8_t 	altitude[4];
 
 } GET_SENSOR_BMP390;
+
+typedef struct _GET_SENSOR_H3LIS331DL_
+{
+	uint8_t 	accel_x[3];
+	uint8_t 	accel_y[3];
+	uint8_t 	accel_z[3];
+
+} GET_SENSOR_H3LIS331DL;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Ultility Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef struct _FSP_HANDSAKE_
@@ -250,7 +268,10 @@ typedef union _FSP_Payload_Frame_typedef_
 	
 	GET_SENSOR_TEMP							get_sensor_temp;
 	GET_SENSOR_PRESSURE						get_sensor_pressure;
+	GET_SENSOR_ALTITUDE						get_sensor_altitude;
 	GET_SENSOR_BMP390						get_sensor_BMP390;
+
+	GET_SENSOR_H3LIS331DL					get_sensor_H3LIS331DL;
 
 	/* :::::::::: Ultility Command :::::::: */
 	FSP_HANDSAKE							handshake;

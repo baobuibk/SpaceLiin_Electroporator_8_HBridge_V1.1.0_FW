@@ -58,6 +58,8 @@ int CMD_GET_SENSOR_PRESSURE(int argc, char *argv[]);
 int CMD_GET_SENSOR_ALTITUDE(int argc, char *argv[]);
 int CMD_GET_SENSOR_BMP390(int argc, char *argv[]);
 
+int CMD_GET_SENSOR_H3LIS(int argc, char *argv[]);
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Auto Pulsing Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 int CMD_SET_THRESHOLD_ACCEL(int argc, char *argv[]);
 int CMD_GET_THRESHOLD_ACCEL(int argc, char *argv[]);

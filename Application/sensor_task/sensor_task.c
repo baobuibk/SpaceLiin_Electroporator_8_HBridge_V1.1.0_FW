@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "app.h"
 
-#include "stm32f4xx_ll_i2c.h"
-
 #include "sensor_task.h"
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -25,10 +23,18 @@ typedef struct _sensor_task_typedef_
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static bool			is_sensor_init = false;
+
 sensor_task_typedef Sensor_Task;
 uint8_t				Sensor_Task_buffer[16];
 
+uint8_t				Sensor_Init_State = 0;
+
+static bool is_sensor_read_complete = false;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+static bool Sensor_Init(void);
+static bool Sensor_Read_Driver_Process(Sensor_Read_typedef read_type);
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static uint8_t      is_buffer_full(volatile uint16_t *pui16Read,
                             volatile uint16_t *pui16Write, uint16_t ui16Size);
@@ -68,7 +74,6 @@ static uint16_t     advance_buffer_index(volatile uint16_t* pui16Index, uint16_t
                                                                       				(p_sensor_task)->buffer_size))
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-bool is_sensor_read_finished = false;
 bool is_accel_calib = true;
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
@@ -91,7 +96,6 @@ void Sensor_Read_Value(Sensor_Read_typedef read_type)
 	ADVANCE_SENSOR_TASK_WRITE_INDEX(&Sensor_Task);
 }
 
-uint8_t sensor_driver_return = 0;
 void Sensor_Read_Task(void*)
 {
 	if (is_sensor_init == false)
@@ -102,32 +106,121 @@ void Sensor_Read_Task(void*)
 		{
 			UART_Printf(&RS232_UART, "Sensor Init success\n");
 			UART_Send_String(&RS232_UART, "> ");
+			return;
 		}
 
+		return;
 	}
 	
-	if(!is_accel_calib)
-		if(LSM6DSOX_Calib())
-			is_accel_calib = true;
+//	if(is_accel_calib == false)
+//    {
+//        if(LSM6DSOX_Calib() == true)
+//        {
+//            is_accel_calib = true;
+//        }
+//    }
+
 	if (IS_SENSOR_TASK_BUFFER_EMPTY(&Sensor_Task) == true)
 	{
 		return;
 	}
-	
-	sensor_driver_return = Sensor_Read_Driver_Process(Sensor_Task.p_buffer[Sensor_Task.read_index]);
 
-	if (sensor_driver_return == 0)
-	{
+    if (Sensor_Read_Driver_Process(Sensor_Task.p_buffer[Sensor_Task.read_index]) == false)
+    {
         return;
-	}
+    }
 
-    is_sensor_read_finished = true;
-    sensor_driver_return = 0;
+    is_sensor_read_complete = true;
 
     ADVANCE_SENSOR_TASK_READ_INDEX(&Sensor_Task);
 }
 
+bool Is_Sensor_Read_Complete(void)
+{
+	if (is_sensor_read_complete == true)
+	{
+		is_sensor_read_complete = false;
+		return 1;
+	}
+	
+	return 0;
+}
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+static bool Sensor_Init(void)
+{
+	switch (Sensor_Init_State)
+    {
+	case 0:
+    {
+		if (LSM6DSOX_init() == 1)
+        {
+			Sensor_Init_State = 1;
+		}
+		return 0;
+	}
+
+	case 1:
+    {
+		if (BMP390_init() == 1)
+        {
+			Sensor_Init_State = 2;
+		}
+		return 0;
+	}
+
+	case 2:
+    {
+		if (H3LIS331DL_init() == 1)
+        {
+			Sensor_Init_State = 0;
+			return 1;
+		}
+		return 0;
+	}
+
+	default:
+		return 0;
+	}
+}
+
+static bool Sensor_Read_Driver_Process(Sensor_Read_typedef read_type)
+{
+    Sensor_Interface* sensor = NULL;
+
+	switch (read_type)
+    {
+
+	case SENSOR_READ_GYRO:
+	case SENSOR_READ_ACCEL:
+	case SENSOR_READ_LSM6DSOX:
+    {
+		sensor = &Sensor_LSM6DSOX;
+        break;
+	}
+
+	case SENSOR_READ_TEMP:
+	case SENSOR_READ_PRESSURE:
+	case SENSOR_READ_ALTITUDE:
+	case SENSOR_READ_BMP390:
+    {
+		sensor = &Sensor_BMP390;
+        break;
+	}
+
+	case SENSOR_READ_H3LIS331DL:
+	{
+		sensor = &Sensor_H3LIS331DL;
+		break;
+	}
+
+	default:
+		return 0;
+	}
+
+    return sensor->read_value(read_type);
+}
+
 //*****************************************************************************
 //
 //! Determines whether the ring buffer whose pointers and size are provided

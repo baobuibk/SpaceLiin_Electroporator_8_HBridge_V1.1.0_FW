@@ -20,7 +20,7 @@ static uint8_t FSP_process_state = 0;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 static void fsp_print(uint8_t packet_length);
-static void convert_Integer_To_Bytes(int number, uint8_t arr[]);
+static void convert_Integer_To_Bytes(uint32_t number, uint8_t arr[], uint8_t size);
 static void double_to_string(double value, char *buffer, uint8_t precision);
 
 //static void convertTemperature(float temp, uint8_t buf[]);
@@ -286,20 +286,19 @@ uint8_t FSP_Line_Process() {
 		}
 
 		case 1: {
-			if (is_sensor_read_finished == false) {
+			if (Is_Sensor_Read_Complete() == false)
+			{
 				return 0;
 			}
-
-			is_sensor_read_finished = false;
 
 			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_GYRO;
 
 			convert_Integer_To_Bytes(Sensor_Gyro.x,
-					ps_FSP_TX->Payload.get_sensor_gyro.gyro_x);
+					ps_FSP_TX->Payload.get_sensor_gyro.gyro_x, 2);
 			convert_Integer_To_Bytes(Sensor_Gyro.y,
-					ps_FSP_TX->Payload.get_sensor_gyro.gyro_y);
+					ps_FSP_TX->Payload.get_sensor_gyro.gyro_y, 2);
 			convert_Integer_To_Bytes(Sensor_Gyro.z,
-					ps_FSP_TX->Payload.get_sensor_gyro.gyro_z);
+					ps_FSP_TX->Payload.get_sensor_gyro.gyro_z, 2);
 
 			fsp_print(7);
 			FSP_process_state = 0;
@@ -321,20 +320,19 @@ uint8_t FSP_Line_Process() {
 		}
 
 		case 1: {
-			if (is_sensor_read_finished == false) {
+			if (Is_Sensor_Read_Complete() == false)
+			{
 				return 0;
 			}
-
-			is_sensor_read_finished = false;
 
 			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_ACCEL;
 
 			convert_Integer_To_Bytes(Sensor_Accel.x,
-					ps_FSP_TX->Payload.get_sensor_accel.accel_x);
+					ps_FSP_TX->Payload.get_sensor_accel.accel_x, 2);
 			convert_Integer_To_Bytes(Sensor_Accel.y,
-					ps_FSP_TX->Payload.get_sensor_accel.accel_y);
+					ps_FSP_TX->Payload.get_sensor_accel.accel_y, 2);
 			convert_Integer_To_Bytes(Sensor_Accel.z,
-					ps_FSP_TX->Payload.get_sensor_accel.accel_z);
+					ps_FSP_TX->Payload.get_sensor_accel.accel_z, 2);
 
 			fsp_print(7);
 			FSP_process_state = 0;
@@ -356,27 +354,26 @@ uint8_t FSP_Line_Process() {
 		}
 
 		case 1: {
-			if (is_sensor_read_finished == false) {
+			if (Is_Sensor_Read_Complete() == false)
+			{
 				return 0;
 			}
-
-			is_sensor_read_finished = false;
 
 			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_LSM6DSOX;
 
 			convert_Integer_To_Bytes(Sensor_Gyro.x,
-					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_x);
+					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_x, 2);
 			convert_Integer_To_Bytes(Sensor_Gyro.y,
-					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_y);
+					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_y, 2);
 			convert_Integer_To_Bytes(Sensor_Gyro.z,
-					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_z);
+					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.gyro_z, 2);
 
 			convert_Integer_To_Bytes(Sensor_Accel.x,
-					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_x);
+					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_x, 2);
 			convert_Integer_To_Bytes(Sensor_Accel.y,
-					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_y);
+					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_y, 2);
 			convert_Integer_To_Bytes(Sensor_Accel.z,
-					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_z);
+					ps_FSP_TX->Payload.get_sensor_LSM6DSOX.accel_z, 2);
 
 			fsp_print(13);
 			FSP_process_state = 0;
@@ -397,12 +394,12 @@ uint8_t FSP_Line_Process() {
 			return 0;
 		}
 
-		case 1: {
-			if (is_sensor_read_finished == false) {
+		case 1:
+		{
+			if (Is_Sensor_Read_Complete() == false)
+			{
 				return 0;
 			}
-
-			is_sensor_read_finished = false;
 
 			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_TEMP;
 
@@ -428,12 +425,12 @@ uint8_t FSP_Line_Process() {
 			return 0;
 		}
 
-		case 1: {
-			if (is_sensor_read_finished == false) {
+		case 1:
+		{
+			if (Is_Sensor_Read_Complete() == false)
+			{
 				return 0;
 			}
-
-			is_sensor_read_finished = false;
 
 			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_PRESSURE;
 
@@ -441,6 +438,37 @@ uint8_t FSP_Line_Process() {
 					(char*) ps_FSP_TX->Payload.get_sensor_pressure.pressure, 0);
 
 			fsp_print(8);
+			FSP_process_state = 0;
+			return 1;
+		}
+
+		default:
+			break;
+		}
+		return 0;
+	}
+
+	case FSP_CMD_GET_SENSOR_ALTITUDE: {
+		switch (FSP_process_state) {
+		case 0: {
+			Sensor_Read_Value(SENSOR_READ_ALTITUDE);
+			FSP_process_state = 1;
+			return 0;
+		}
+
+		case 1:
+		{
+			if (Is_Sensor_Read_Complete() == false)
+			{
+				return 0;
+			}
+
+			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_ALTITUDE;
+
+			double_to_string(Sensor_Altitude,
+					(char*) ps_FSP_TX->Payload.get_sensor_altitude.altitude, 2);
+
+			fsp_print(5);
 			FSP_process_state = 0;
 			return 1;
 		}
@@ -459,12 +487,12 @@ uint8_t FSP_Line_Process() {
 			return 0;
 		}
 
-		case 1: {
-			if (is_sensor_read_finished == false) {
+		case 1:
+		{
+			if (Is_Sensor_Read_Complete() == false)
+			{
 				return 0;
 			}
-
-			is_sensor_read_finished = false;
 
 			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_BMP390;
 
@@ -472,8 +500,48 @@ uint8_t FSP_Line_Process() {
 					(char*) ps_FSP_TX->Payload.get_sensor_BMP390.temp, 2);
 			double_to_string(Sensor_Pressure,
 					(char*) ps_FSP_TX->Payload.get_sensor_BMP390.pressure, 0);
+			double_to_string(Sensor_Altitude,
+					(char*) ps_FSP_TX->Payload.get_sensor_BMP390.altitude, 2);
 
-			fsp_print(14);
+			fsp_print(18);
+			FSP_process_state = 0;
+			return 1;
+		}
+
+		default:
+			break;
+		}
+		return 0;
+	}
+
+	case FSP_CMD_GET_SENSOR_H3LIS331DL:
+	{
+		switch (FSP_process_state)
+		{
+		case 0:
+		{
+			Sensor_Read_Value(SENSOR_READ_H3LIS331DL);
+			FSP_process_state = 1;
+			return 0;
+		}
+
+		case 1:
+		{
+			if (Is_Sensor_Read_Complete() == false)
+			{
+				return 0;
+			}
+
+			ps_FSP_TX->CMD = FSP_CMD_GET_SENSOR_H3LIS331DL;
+
+			convert_Integer_To_Bytes(H3LIS_Accel.x,
+					ps_FSP_TX->Payload.get_sensor_H3LIS331DL.accel_x, 3);
+			convert_Integer_To_Bytes(H3LIS_Accel.y,
+					ps_FSP_TX->Payload.get_sensor_H3LIS331DL.accel_y, 3);
+			convert_Integer_To_Bytes(H3LIS_Accel.z,
+					ps_FSP_TX->Payload.get_sensor_H3LIS331DL.accel_z, 3);
+
+			fsp_print(10);
 			FSP_process_state = 0;
 			return 1;
 		}
@@ -552,9 +620,12 @@ static void fsp_print(uint8_t packet_length) {
 	UART_FSP(&GPC_UART, (char*) encoded_frame, frame_len);
 }
 
-static void convert_Integer_To_Bytes(int number, uint8_t arr[]) {
-	arr[0] = number & 0xff;
-	arr[1] = (number >> 8) & 0xff;
+static void convert_Integer_To_Bytes(uint32_t number, uint8_t arr[], uint8_t size)
+{
+	for (uint8_t i = 0; i < size; i++)
+	{
+		arr[i] = (number >> (8 * i)) & 0xff;
+	}
 }
 
 static void double_to_string(double value, char *buffer, uint8_t precision) {

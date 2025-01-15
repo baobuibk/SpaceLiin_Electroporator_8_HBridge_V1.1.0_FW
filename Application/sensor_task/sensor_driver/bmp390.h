@@ -1,22 +1,32 @@
-#ifndef ACCEL_PULSING_TASK_ACCEL_H_
+#ifndef _BMP390_H_
 
-#define ACCEL_PULSING_TASK_ACCEL_H_
+#define _BMP390_H_
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Include ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+#include "stdint.h"
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-extern LSM6DSOX_data_typedef Threshold_Accel;
+extern double Sensor_Temp;
+extern double Sensor_Pressure;
+extern double Sensor_Altitude;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-/* :::::::::: Task Init :::::::: */
-// void Accel_Pulsing_Task_Init();
+/* :::::::::: BMP390 Command :::::::: */
+bool BMP390_init(void);
 
-/* :::::::::: Task ::::::::::::: */
-void Accel_Pulsing_Task(void*);
-void Enable_Auto_Pulsing();
-void Disable_Auto_Pulsing();
+bool BMP390_read_value(Sensor_Read_typedef read_type);
 
-#endif /* ACCEL_PULSING_TASK_ACCEL_H_ */
+/* :::::::::: BMP390 Flag Check Command :::::::: */
+bool Is_BMP390_Init_Complete();
+
+bool Is_BMP390_Read_Complete();
+
+/* :::::::::: Sensor_BMP390 Interface :::::::: */
+extern Sensor_Interface Sensor_BMP390;
+
+#endif //_BMP390_H_

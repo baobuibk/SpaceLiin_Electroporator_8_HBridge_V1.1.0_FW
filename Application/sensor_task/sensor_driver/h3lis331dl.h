@@ -1,22 +1,39 @@
-#ifndef ACCEL_PULSING_TASK_ACCEL_H_
+#ifndef _H3LIS331DL_H_
 
-#define ACCEL_PULSING_TASK_ACCEL_H_
+#define _H3LIS331DL_H_
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Include ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+#include "stdint.h"
+
+#include "sensor_interface.h"
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defines ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Types ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+typedef struct _H3LIS331DL_data_typedef_
+{
+	int32_t x;
+	int32_t y;
+	int32_t z;
+} H3LIS331DL_data_typedef;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-extern LSM6DSOX_data_typedef Threshold_Accel;
+extern H3LIS331DL_data_typedef H3LIS_Accel;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Enum ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Struct ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Class ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-/* :::::::::: Task Init :::::::: */
-// void Accel_Pulsing_Task_Init();
+/* :::::::::: H3LIS331DL Command :::::::: */
+bool H3LIS331DL_init(void);
 
-/* :::::::::: Task ::::::::::::: */
-void Accel_Pulsing_Task(void*);
-void Enable_Auto_Pulsing();
-void Disable_Auto_Pulsing();
+bool H3LIS331DL_read_value(Sensor_Read_typedef read_type);
 
-#endif /* ACCEL_PULSING_TASK_ACCEL_H_ */
+/* :::::::::: H3LIS331DL Flag Check Command :::::::: */
+bool Is_H3LIS331DL_Init_Complete(void);
+
+bool Is_H3LIS331DL_Read_Complete(void);
+
+/* :::::::::: Sensor_LSM6DSOX Interface :::::::: */
+extern Sensor_Interface Sensor_H3LIS331DL;
+
+#endif //_H3LIS331DL_H_
