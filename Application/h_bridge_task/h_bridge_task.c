@@ -38,8 +38,11 @@ static void fsp_print(uint8_t packet_length);
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Variables ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 // H_Bridge_Task_typedef HB_Task_data[10];
 
-bool is_manual_mode_enable = false;
 bool is_h_bridge_enable = false;
+
+bool is_manual_mode_enable = false;
+uint16_t manual_mode_on_count = 0;
+uint8_t manual_mode_which_cap = 0;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Public Function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* :::::::::: H Bridge Task Init :::::::: */
@@ -134,6 +137,36 @@ case H_BRIDGE_CHECK_PULSE_STATE:
 default:
     break;
 }
+}
+
+void H_Bridge_Manual_Task(void*)
+{
+    if(is_manual_mode_enable == false)
+    {
+        V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+
+        H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+        H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+        LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+        manual_mode_on_count = 0;
+
+        ps_FSP_TX->CMD = FSP_CMD_SET_MANUAL_PULSE;
+        ps_FSP_TX->Payload.set_manual_pulse.State = 0;
+        fsp_print(2);
+
+        SchedulerTaskDisable(7);
+        return;
+    }
+
+    if (manual_mode_on_count >= 25000)
+    {
+        manual_mode_on_count = 0;
+        is_manual_mode_enable = false;
+        return;
+    }
+    
+    manual_mode_on_count++;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Private Prototype ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

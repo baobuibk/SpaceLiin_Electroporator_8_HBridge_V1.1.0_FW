@@ -291,6 +291,8 @@ uint8_t FSP_Line_Process() {
 		{
 			H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
 			H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+			
+			manual_mode_on_count = 0;
 		}
 
 		H_Bridge_Set_Pole(&HB_pos_pole, &HB_neg_pole, ps_FSP_RX->Payload.set_manual_pole.pos_pole, ps_FSP_RX->Payload.set_manual_pole.neg_pole);
@@ -306,11 +308,13 @@ uint8_t FSP_Line_Process() {
 
 	case FSP_CMD_SET_MANUAL_CAP:
 	{
-		if (ps_FSP_RX->Payload.set_manual_cap.Which_Cap == 1)
+		manual_mode_which_cap = ps_FSP_RX->Payload.set_manual_cap.Which_Cap;
+
+		if (manual_mode_which_cap == 1)
 		{
 			V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
 		}
-		else if (ps_FSP_RX->Payload.set_manual_cap.Which_Cap == 2)
+		else if (manual_mode_which_cap == 2)
 		{
 			V_Switch_Set_Mode(V_SWITCH_MODE_LV_ON);
 		}
@@ -328,8 +332,26 @@ uint8_t FSP_Line_Process() {
 
 		if (is_manual_mode_enable == true)
 		{
+			if (manual_mode_which_cap == 1)
+			{
+				V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+			}
+			else if (manual_mode_which_cap == 2)
+			{
+				V_Switch_Set_Mode(V_SWITCH_MODE_LV_ON);
+			}
+			else
+			{
+				V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+			}
+
 			H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
 			H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+			LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+			manual_mode_on_count = 0;
+
+			SchedulerTaskEnable(7, 1);
 
 			break;
 		}
@@ -337,8 +359,15 @@ uint8_t FSP_Line_Process() {
 		V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
 		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
 		H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
-
 		LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+		manual_mode_on_count = 0;
+
+        ps_FSP_TX->CMD = FSP_CMD_SET_MANUAL_PULSE;
+        ps_FSP_TX->Payload.set_manual_pulse.State = 0;
+        fsp_print(2);
+
+        SchedulerTaskDisable(7);
 
 		break;
 	}
