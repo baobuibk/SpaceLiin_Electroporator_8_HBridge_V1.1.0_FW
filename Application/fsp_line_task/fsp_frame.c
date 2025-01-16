@@ -254,6 +254,95 @@ uint8_t FSP_Line_Process() {
 		return 1;
 	}
 
+		/* :::::::::: Auto Accel Command :::::::: */
+	case FSP_CMD_SET_AUTO_ACCEL:
+		if(ps_FSP_RX->Payload.set_auto_accel.State)
+			Enable_Auto_Pulsing();
+		else
+			Disable_Auto_Pulsing();
+		break;
+
+	case FSP_CMD_SET_THRESHOLD_ACCEL:
+		Threshold_Accel.x = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.XH << 8) |
+		                              ps_FSP_RX->Payload.set_threshold_accel.XL);
+		Threshold_Accel.y = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.YH << 8) |
+		                              ps_FSP_RX->Payload.set_threshold_accel.YL);
+		Threshold_Accel.z = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.ZH << 8) |
+		                              ps_FSP_RX->Payload.set_threshold_accel.ZL);
+
+		break;
+
+	case FSP_CMD_GET_THRESHOLD_ACCEL:
+		ps_FSP_TX->CMD = FSP_CMD_GET_THRESHOLD_ACCEL;
+		ps_FSP_TX->Payload.get_threshold_accel.XL = (uint8_t)(Threshold_Accel.x & 0xFF);
+		ps_FSP_TX->Payload.get_threshold_accel.XH = (uint8_t)((Threshold_Accel.x >> 8) & 0xFF);
+		ps_FSP_TX->Payload.get_threshold_accel.YL = (uint8_t)(Threshold_Accel.y & 0xFF);
+		ps_FSP_TX->Payload.get_threshold_accel.YH = (uint8_t)((Threshold_Accel.y >> 8) & 0xFF);
+		ps_FSP_TX->Payload.get_threshold_accel.ZL = (uint8_t)(Threshold_Accel.z & 0xFF);
+		ps_FSP_TX->Payload.get_threshold_accel.ZH = (uint8_t)((Threshold_Accel.z >> 8) & 0xFF);
+
+		fsp_print(7);
+		break;
+
+		/* :::::::::: Set Pulse Manual Command :::::::: */
+	case FSP_CMD_SET_MANUAL_POLE:
+	{
+		if (is_manual_mode_enable == true)
+		{
+			H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+			H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+		}
+
+		H_Bridge_Set_Pole(&HB_pos_pole, &HB_neg_pole, ps_FSP_RX->Payload.set_manual_pole.pos_pole, ps_FSP_RX->Payload.set_manual_pole.neg_pole);
+
+		if (is_manual_mode_enable == true)
+		{
+			H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
+			H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+		}
+		
+		break;
+	}
+
+	case FSP_CMD_SET_MANUAL_CAP:
+	{
+		if (ps_FSP_RX->Payload.set_manual_cap.Which_Cap == 1)
+		{
+			V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+		}
+		else if (ps_FSP_RX->Payload.set_manual_cap.Which_Cap == 2)
+		{
+			V_Switch_Set_Mode(V_SWITCH_MODE_LV_ON);
+		}
+		else
+		{
+			V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+		}
+		
+		break;
+	}
+
+	case FSP_CMD_SET_MANUAL_PULSE:
+	{
+		is_manual_mode_enable = ps_FSP_RX->Payload.set_manual_pulse.State;
+
+		if (is_manual_mode_enable == true)
+		{
+			H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
+			H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+
+			break;
+		}
+	
+		V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+		H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+
+		LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+		break;
+	}
+
 		/* :::::::::: VOM Command :::::::: */
 	case FSP_CMD_MEASURE_IMPEDANCE: {
 		is_Measure_Impedance = true;
@@ -562,36 +651,6 @@ uint8_t FSP_Line_Process() {
 		UART_Send_String(&RS232_UART, "Received FSP_CMD_HANDSHAKE\r\n> ");
 		return 1;
 	}
-
-		/* :::::::::: Auto Accel Command :::::::: */
-	case FSP_CMD_SET_AUTO_ACCEL:
-		if(ps_FSP_RX->Payload.set_auto_accel.State)
-			Enable_Auto_Pulsing();
-		else
-			Disable_Auto_Pulsing();
-		break;
-
-	case FSP_CMD_SET_THRESHOLD_ACCEL:
-		Threshold_Accel.x = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.XH << 8) |
-		                              ps_FSP_RX->Payload.set_threshold_accel.XL);
-		Threshold_Accel.y = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.YH << 8) |
-		                              ps_FSP_RX->Payload.set_threshold_accel.YL);
-		Threshold_Accel.z = (int16_t)((ps_FSP_RX->Payload.set_threshold_accel.ZH << 8) |
-		                              ps_FSP_RX->Payload.set_threshold_accel.ZL);
-
-		break;
-
-	case FSP_CMD_GET_THRESHOLD_ACCEL:
-		ps_FSP_TX->CMD = FSP_CMD_GET_THRESHOLD_ACCEL;
-		ps_FSP_TX->Payload.get_threshold_accel.XL = (uint8_t)(Threshold_Accel.x & 0xFF);
-		ps_FSP_TX->Payload.get_threshold_accel.XH = (uint8_t)((Threshold_Accel.x >> 8) & 0xFF);
-		ps_FSP_TX->Payload.get_threshold_accel.YL = (uint8_t)(Threshold_Accel.y & 0xFF);
-		ps_FSP_TX->Payload.get_threshold_accel.YH = (uint8_t)((Threshold_Accel.y >> 8) & 0xFF);
-		ps_FSP_TX->Payload.get_threshold_accel.ZL = (uint8_t)(Threshold_Accel.z & 0xFF);
-		ps_FSP_TX->Payload.get_threshold_accel.ZH = (uint8_t)((Threshold_Accel.z >> 8) & 0xFF);
-
-		fsp_print(7);
-		break;
 
 
 	default:

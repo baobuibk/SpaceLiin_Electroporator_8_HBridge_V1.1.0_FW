@@ -76,7 +76,9 @@ tCmdLineEntry g_psCmdTable[] =
 	{ "CALIB_ACCEL",			CMD_CALIB_ACCEL,			" : Enable auto accel calib" },
 
 	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Manual Pulse Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-	{ "SET_PULSE_MANUAL", 		CMD_SET_PULSE_MANUAL, 		" : Turn on, off pulse manually" },
+	{ "SET_MANUAL_POLE", 		CMD_SET_MANUAL_POLE, 		" : Choose which cap to turn on" },
+	{ "SET_MANUAL_CAP", 		CMD_SET_MANUAL_CAP, 		" : Choose which cap to turn on" },
+	{ "SET_MANUAL_PULSE", 		CMD_SET_MANUAL_PULSE, 		" : Turn on, off pulse manually" },
 
 	/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ VOM Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 	{ "MEASURE_IMPEDANCE", 		CMD_MEASURE_IMPEDANCE,		" : Measure cuvette impedance"},
@@ -518,6 +520,7 @@ int CMD_SET_PULSE_CONTROL(int argc, char *argv[])
 		return CMDLINE_OK;
 	}
 
+	V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
 	H_Bridge_Process_Sequence_Array();
 
 	is_h_bridge_enable = receive_argm;
@@ -849,11 +852,48 @@ int CMD_CALIB_ACCEL(int argc, char *argv[]) {
 }
 
 /* :::::::::: Manual Pulse Command :::::::::: */
-int CMD_SET_PULSE_MANUAL(int argc, char *argv[])
+int CMD_SET_MANUAL_POLE(int argc, char *argv[])
+{
+	if (argc < 3)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 3)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	int receive_argm[2];
+
+	receive_argm[0] = atoi(argv[1]);
+	receive_argm[1] = atoi(argv[2]);
+
+	if (receive_argm[0] == receive_argm[1])
+		return CMDLINE_INVALID_ARG;
+	else if ((receive_argm[0] > 8) || (receive_argm[0] < 1) || (receive_argm[0] == 9))
+		return CMDLINE_INVALID_ARG;
+	else if ((receive_argm[1] > 8) || (receive_argm[1] < 1) || (receive_argm[1] == 9))
+		return CMDLINE_INVALID_ARG;
+
+	if (is_manual_mode_enable == true)
+	{
+		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+    	H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+	}
+	
+	H_Bridge_Set_Pole(&HB_pos_pole, &HB_neg_pole, ChannelMapping[receive_argm[0] - 1], ChannelMapping[receive_argm[1] - 1]);
+
+	if (is_manual_mode_enable == true)
+	{
+		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
+    	H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
+	}
+
+	return CMDLINE_OK;
+}
+
+int CMD_SET_MANUAL_CAP(int argc, char *argv[])
 {
 	if (is_h_bridge_enable == true)
 	{
 		UART_Send_String(&RS232_UART, "> ERROR: H BRIDGE IS RUNNING\n");
+		return CMDLINE_INVALID_CMD;
 	}
 	
 	if (argc < 2)
@@ -861,39 +901,64 @@ int CMD_SET_PULSE_MANUAL(int argc, char *argv[])
 	else if (argc > 2)
 		return CMDLINE_TOO_MANY_ARGS;
 
-	uint8_t receive_argm[2];
+	uint8_t receive_argm;
 
-	receive_argm[0] = atoi(argv[1]);
-	receive_argm[1] = atoi(argv[2]);
+	receive_argm = atoi(argv[1]);
 
-	if ((receive_argm[0] > 1) || (receive_argm[0] < 0))
+	if ((receive_argm > 3) || (receive_argm < 0))
 		return CMDLINE_INVALID_ARG;
-
-	if ((receive_argm[1] > 2) || (receive_argm[1] < 1))
-		return CMDLINE_INVALID_ARG;
-
-	is_manual_mode_enable = receive_argm[0];
-
-	if (receive_argm[0] == true)
+	
+	if (receive_argm == 1)
 	{
-		if (receive_argm[1] == 1)
-		{
-			V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
-		}
-		else
-		{
-			V_Switch_Set_Mode(V_SWITCH_MODE_LV_ON);
-		}
-		
+		V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+	}
+	else if (receive_argm == 2)
+	{
+		V_Switch_Set_Mode(V_SWITCH_MODE_LV_ON);
+	}
+	else
+	{
+		V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+	}
+	
+	return CMDLINE_OK;
+}
+
+int CMD_SET_MANUAL_PULSE(int argc, char *argv[])
+{
+	if (is_h_bridge_enable == true)
+	{
+		UART_Send_String(&RS232_UART, "> ERROR: H BRIDGE IS RUNNING\n");
+		return CMDLINE_INVALID_CMD;
+	}
+	
+	if (argc < 2)
+		return CMDLINE_TOO_FEW_ARGS;
+	else if (argc > 2)
+		return CMDLINE_TOO_MANY_ARGS;
+
+	uint8_t receive_argm;
+
+	receive_argm = atoi(argv[1]);
+
+	if ((receive_argm > 1) || (receive_argm < 0))
+		return CMDLINE_INVALID_ARG;
+
+	is_manual_mode_enable = receive_argm;
+
+	if (receive_argm == true)
+	{
+		H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
     	H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_LS_ON);
-    	H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_HS_ON);
 
 		return CMDLINE_OK;
 	}
 	
 	V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+	H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
     H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
-    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+
+	LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
 	return CMDLINE_OK;
 }

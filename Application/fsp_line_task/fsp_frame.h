@@ -26,6 +26,11 @@ typedef enum _FSP_CMD_typedef_
 	FSP_CMD_GET_THRESHOLD_ACCEL,
 	FSP_CMD_STREAM_ACCEL,
 
+	/* :::::::::: Manual Pulse Command :::::::: */
+	FSP_CMD_SET_MANUAL_POLE,
+	FSP_CMD_SET_MANUAL_CAP,
+	FSP_CMD_SET_MANUAL_PULSE,
+
 	/* :::::::::: VOM Command :::::::: */
 	FSP_CMD_MEASURE_VOLT,
 	FSP_CMD_MEASURE_CURRENT,
@@ -147,6 +152,24 @@ typedef struct _FSP_CMD_STREAM_ACCEL_FRAME_
 	uint8_t		ZH;
 } FSP_CMD_STREAM_ACCEL_FRAME;
 
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Manual Pulse Command ~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+typedef struct _FSP_SET_MANUAL_POLE_
+{
+	uint8_t 	pos_pole;		/* hv pulse count */
+	uint8_t 	neg_pole;		/* hv pulse count */
+
+} FSP_SET_MANUAL_POLE;
+
+typedef struct _FSP_SET_MANUAL_CAP_
+{
+	uint8_t		Which_Cap;
+} FSP_SET_MANUAL_CAP;
+
+typedef struct _FSP_SET_MANUAL_PULSE_
+{
+	uint8_t 	State;      	/* 0: OFF, 1: ON */
+} FSP_SET_MANUAL_PULSE;
+
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ VOM Command ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 typedef struct _MEASURE_VOLT_FRAME_
 {
@@ -261,6 +284,11 @@ typedef union _FSP_Payload_Frame_typedef_
 	FSP_SET_THRESHOLD_ACCEL_FRAME			set_threshold_accel;
 	FSP_GET_THRESHOLD_ACCEL_FRAME			get_threshold_accel;
 	FSP_CMD_STREAM_ACCEL_FRAME				stream_accel;
+
+	/* :::::::::: Manual Pulse Command :::::::: */
+	FSP_SET_MANUAL_POLE						set_manual_pole;
+	FSP_SET_MANUAL_CAP						set_manual_cap;
+	FSP_SET_MANUAL_PULSE					set_manual_pulse;
 
 	/* :::::::::: VOM Command :::::::: */
 	MEASURE_VOLT_FRAME						measure_volt;

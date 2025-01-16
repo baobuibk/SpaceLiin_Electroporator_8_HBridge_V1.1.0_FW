@@ -193,6 +193,24 @@ void H_Bridge_Set_Mode(H_Bridge_typdef* H_Bridge_x, H_Bridge_mode SetMode)
 
         break;
     case H_BRIDGE_MODE_HS_ON:
+        LL_TIM_SetPrescaler(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Prescaler);
+        LL_TIM_GenerateEvent_UPDATE(H_Bridge_x->PWM.TIMx);
+        LL_TIM_ClearFlag_UPDATE(H_Bridge_x->PWM.TIMx);
+
+        LL_TIM_OC_SetMode(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Channel, LL_TIM_OCMODE_PWM2);
+        HB_Set_Freq(&H_Bridge_x->PWM, 1000.0, 1); //Period = 1ms
+        HB_Set_Duty(&H_Bridge_x->PWM, 10, 1); //Duty = 100us
+
+        LL_TIM_OC_SetMode(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+        LL_TIM_SetPrescaler(H_Bridge_x->PWM.TIMx, 1099);
+        HB_Set_ARR(&H_Bridge_x->PWM, 65514, 0);
+
+        *H_Bridge_x->Pin_State = 1;
+        H_Bridge_x->pulse_count = 0;
+        H_Bridge_x->delay_time_ms = 0;
+
+        break;
+
     case H_BRIDGE_MODE_LS_ON:
         LL_TIM_SetPrescaler(H_Bridge_x->PWM.TIMx, H_Bridge_x->PWM.Prescaler);
         LL_TIM_GenerateEvent_UPDATE(H_Bridge_x->PWM.TIMx);
@@ -384,12 +402,36 @@ void H_Bridge_SD0_3_Interupt_Handle()
 
             break;
         case H_BRIDGE_MODE_HS_ON:
-            LL_GPIO_SetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+            if (*p_HB_SD_0_3_IRQn->Pin_State == 1)
+            {
+                LL_GPIO_SetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+                LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
-            LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
-            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
-            LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+                // LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+                // LL_TIM_SetPrescaler(p_HB_SD_0_3_IRQn->PWM.TIMx, 5494);
+                // HB_Set_Freq(&p_HB_SD_0_3_IRQn->PWM, 0.1, 1);
+                
+                // LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+
+                LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_PWM2);
+                // LL_TIM_SetPrescaler(p_HB_SD_0_3_IRQn->PWM.TIMx, 1);
+                // HB_Set_ARR(&p_HB_SD_0_3_IRQn->PWM, 36000, 0); //Period = 1ms
+                // HB_Set_OC(&p_HB_SD_0_3_IRQn->PWM, 3600, 0); //Duty = 100us
+
+                *p_HB_SD_0_3_IRQn->Pin_State = 0;
+            }
+            else
+            {
+                LL_GPIO_ResetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
+                LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+                LL_TIM_OC_SetMode(p_HB_SD_0_3_IRQn->PWM.TIMx, p_HB_SD_0_3_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_INACTIVE);
+                LL_TIM_GenerateEvent_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+                LL_TIM_ClearFlag_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+                LL_TIM_DisableIT_UPDATE(p_HB_SD_0_3_IRQn->PWM.TIMx);
+                *p_HB_SD_0_3_IRQn->Pin_State = 1;
+            }
+
             break;
         case H_BRIDGE_MODE_LS_ON:
             LL_GPIO_ResetOutputPin(p_HB_SD_0_3_IRQn->Port, *p_HB_SD_0_3_IRQn->Pin);
@@ -444,12 +486,36 @@ void H_Bridge_SD4_7_Interupt_Handle()
 
             break;
         case H_BRIDGE_MODE_HS_ON:
-            LL_GPIO_SetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+            if (*p_HB_SD_4_7_IRQn->Pin_State == 1)
+            {
+                LL_GPIO_SetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+                LL_GPIO_SetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
 
-            LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
-            LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
-            LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
-            LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+                // LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_ACTIVE);
+                // LL_TIM_SetPrescaler(p_HB_SD_4_7_IRQn->PWM.TIMx, 5494);
+                // HB_Set_Freq(&p_HB_SD_4_7_IRQn->PWM, 0.1, 1);
+                
+                // LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+
+                LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_PWM2);
+                // LL_TIM_SetPrescaler(p_HB_SD_4_7_IRQn->PWM.TIMx, 1);
+                // HB_Set_ARR(&p_HB_SD_4_7_IRQn->PWM, 36000, 0); //Period = 1ms
+                // HB_Set_OC(&p_HB_SD_4_7_IRQn->PWM, 3600, 0); //Duty = 100us
+
+                *p_HB_SD_4_7_IRQn->Pin_State = 0;
+            }
+            else
+            {
+                LL_GPIO_ResetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);
+                LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+                LL_TIM_OC_SetMode(p_HB_SD_4_7_IRQn->PWM.TIMx, p_HB_SD_4_7_IRQn->PWM.Channel, LL_TIM_OCMODE_FORCED_INACTIVE);
+                LL_TIM_GenerateEvent_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+                LL_TIM_ClearFlag_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+                LL_TIM_DisableIT_UPDATE(p_HB_SD_4_7_IRQn->PWM.TIMx);
+                *p_HB_SD_4_7_IRQn->Pin_State = 1;
+            }
+
             break;
         case H_BRIDGE_MODE_LS_ON:
             LL_GPIO_ResetOutputPin(p_HB_SD_4_7_IRQn->Port, *p_HB_SD_4_7_IRQn->Pin);

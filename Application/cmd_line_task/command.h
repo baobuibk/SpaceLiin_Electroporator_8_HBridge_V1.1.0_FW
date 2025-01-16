@@ -52,7 +52,9 @@ int CMD_SET_AUTO_ACCEL(int argc, char *argv[]);
 int CMD_CALIB_ACCEL(int argc, char *argv[]);
 
 /* :::::::::: Manual Pulse Command :::::::::: */
-int CMD_SET_PULSE_MANUAL(int argc, char *argv[]);
+int CMD_SET_MANUAL_POLE(int argc, char *argv[]);
+int CMD_SET_MANUAL_CAP(int argc, char *argv[]);
+int CMD_SET_MANUAL_PULSE(int argc, char *argv[]);
 
 /* :::::::::: VOM Command :::::::: */
 int CMD_MEASURE_IMPEDANCE(int argc, char *argv[]);

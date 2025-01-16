@@ -164,20 +164,21 @@ static bool Sensor_Init(void)
     {
 		if (BMP390_init() == 1)
         {
-			Sensor_Init_State = 2;
-		}
-		return 0;
-	}
-
-	case 2:
-    {
-		if (H3LIS331DL_init() == 1)
-        {
 			Sensor_Init_State = 0;
 			return 1;
 		}
 		return 0;
 	}
+
+	// case 2:
+    // {
+	// 	if (H3LIS331DL_init() == 1)
+    //     {
+	// 		Sensor_Init_State = 0;
+	// 		return 1;
+	// 	}
+	// 	return 0;
+	// }
 
 	default:
 		return 0;
