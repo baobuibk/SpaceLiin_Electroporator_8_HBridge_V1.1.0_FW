@@ -205,9 +205,9 @@ static bool H_Bridge_Set_Next_HB_Task_Data(void)
     current_HB_Task_data_index   = next_HB_Task_data_index;
     current_HB_timing_data_index = 0;
 
-    if (HB_Task_data[0].is_setted == false)
+    if (HB_Task_data[current_HB_Task_data_index].task_data[0].is_setted == false)
     {
-        for (++current_HB_timing_data_index; (ps_current_HB_Task_data->task_data[current_HB_timing_data_index].is_setted == false) && (current_HB_timing_data_index < 4); ++current_HB_timing_data_index)
+        for (++current_HB_timing_data_index; (HB_Task_data[current_HB_Task_data_index].task_data[current_HB_timing_data_index].is_setted == false) && (current_HB_timing_data_index < 4); ++current_HB_timing_data_index)
         {
             ;
         }
