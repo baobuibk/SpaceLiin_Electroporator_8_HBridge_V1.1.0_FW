@@ -12,7 +12,7 @@ tSchedulerTask 	g_psSchedulerTable[SCHEDULER_TASK_COUNT] =
                             (void *) 0,
                             2,                          //call every 500us
                             0,                          //count from start
-                            true                        //is active
+                            false                       //is active
                     },
                     {
                             &CMD_Line_Task,

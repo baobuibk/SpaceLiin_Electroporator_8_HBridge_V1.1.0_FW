@@ -48,6 +48,17 @@ uint8_t manual_mode_which_cap = 0;
 /* :::::::::: H Bridge Task Init :::::::: */
 void H_Bridge_Task_Init(void)
 {
+    V_Switch_Set_Mode(V_SWITCH_MODE_ALL_OFF);
+    //V_Switch_Set_Mode(V_SWITCH_MODE_HV_ON);
+
+    H_Bridge_Set_Mode(&HB_pos_pole, H_BRIDGE_MODE_FLOAT);
+    H_Bridge_Set_Mode(&HB_neg_pole, H_BRIDGE_MODE_FLOAT);
+    LL_GPIO_ResetOutputPin(PULSE_LED_PORT,PULSE_LED_PIN);
+
+    current_HB_Task_data_index  = 0;
+    current_HB_timing_data_index = 0;
+    H_Bridge_State = H_BRIDGE_INITIAL_SET_STATE;
+    
     current_HB_Task_data_index  = 0;
     current_HB_timing_data_index = 0;
 }
